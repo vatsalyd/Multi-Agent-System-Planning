@@ -1,0 +1,45 @@
+# Multi-Agent Enterprise Intelligence & Triage System
+
+## Phase 1: Scaffolding & Knowledge Base
+- [x] Initialize Git repo + remote (`github.com/vatsalyd/Multi-Agent-System-Planning`)
+- [x] Create [.gitignore](file:///d:/projects/Agents/.gitignore), [requirements.txt](file:///d:/projects/Agents/requirements.txt), [.env.example](file:///d:/projects/Agents/.env.example)
+- [x] Create [app/config.py](file:///d:/projects/Agents/app/config.py) (pydantic-settings)
+- [x] Create 8 synthetic knowledge base docs in `app/data/knowledge_base/`
+- [x] **Git push**: `feat: project scaffolding, config, and synthetic knowledge base`
+
+## Phase 2: RAG Pipeline (ChromaDB)
+- [x] Create `app/rag/embeddings.py` (OpenAI embedding wrapper)
+- [x] Create `app/rag/vectorstore.py` (ChromaDB persistent client + similarity search)
+- [x] Create `app/rag/ingest.py` (CLI: load → chunk → embed → store)
+- [x] **Git push**: `feat: RAG pipeline - embeddings, ChromaDB vectorstore, and ingestion script`
+
+## Phase 3: Agents & Orchestration (LangGraph)
+- [x] Create `app/agents/triage.py` (intent classifier, structured output)
+- [x] Create `app/agents/retrieval.py` (query optimization + ChromaDB search)
+- [x] Create `app/agents/resolution.py` (draft generator with citations)
+- [x] Create `app/agents/graph.py` (LangGraph state machine with escalation routing)
+- [x] **Git push**: `feat: specialized agents - triage, retrieval, resolution, and LangGraph orchestration`
+
+## Phase 4: FastAPI Backend
+- [x] Create `app/models.py` (Pydantic request/response schemas)
+- [x] Create `app/main.py` (endpoints: `/tickets`, `/tickets/triage`, `/health`)
+- [x] **Git push**: `feat: FastAPI backend`
+
+## Phase 5: Docker & AWS ECS Deployment
+- [x] Create `Dockerfile` (multi-stage build)
+- [x] Create `docker-compose.yml`
+- [x] Create `.github/workflows/deploy.yml` (GitHub Actions → ECR → ECS)
+- [x] **Git push**: `ci: Docker and AWS ECS deployment pipeline`
+
+## Phase 6: Tests & README
+- [x] Create `tests/test_triage.py`
+- [x] Create `tests/test_retrieval.py`
+- [x] Create `tests/test_resolution.py`
+- [x] Create `tests/test_api.py`
+- [x] Create `README.md` (architecture diagram, setup, API reference)
+- [x] **Git push**: `test: unit tests and documentation`
+
+## Verification
+- [/] Run `pytest tests/ -v` (all tests pass with mocked APIs)
+- [ ] Start server locally, test via Swagger UI
+- [ ] Create walkthrough artifact

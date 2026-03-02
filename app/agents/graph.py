@@ -217,28 +217,28 @@ def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     # Add nodes
-    graph.add_node("triage", triage_node)
-    graph.add_node("retrieval", retrieval_node)
-    graph.add_node("resolution", resolution_node)
-    graph.add_node("escalation", escalation_node)
+    graph.add_node("node_triage", triage_node)
+    graph.add_node("node_retrieval", retrieval_node)
+    graph.add_node("node_resolution", resolution_node)
+    graph.add_node("node_escalation", escalation_node)
 
     # Set the entry point
-    graph.set_entry_point("triage")
+    graph.set_entry_point("node_triage")
 
     # Conditional edge: triage → retrieval OR escalation
     graph.add_conditional_edges(
-        "triage",
+        "node_triage",
         should_escalate,
         {
-            "retrieve": "retrieval",
-            "escalate": "escalation",
+            "retrieve": "node_retrieval",
+            "escalate": "node_escalation",
         },
     )
 
     # Linear edges
-    graph.add_edge("retrieval", "resolution")
-    graph.add_edge("resolution", END)
-    graph.add_edge("escalation", END)
+    graph.add_edge("node_retrieval", "node_resolution")
+    graph.add_edge("node_resolution", END)
+    graph.add_edge("node_escalation", END)
 
     return graph.compile()
 
