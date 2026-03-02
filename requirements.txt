@@ -1,0 +1,22 @@
+# Core framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic-settings==2.7.1
+
+# LangChain & LLM
+langchain==0.3.14
+langchain-openai==0.3.1
+langchain-chroma==0.2.2
+langgraph==0.2.62
+
+# Vector DB
+chromadb==0.6.3
+
+# Utilities
+httpx==0.28.1
+python-dotenv==1.0.1
+python-multipart==0.0.20
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.2
