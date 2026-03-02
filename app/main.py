@@ -181,8 +181,8 @@ async def startup_event():
         f"{settings.app_name} v{settings.app_version} started "
         f"on {settings.host}:{settings.port}"
     )
-    if not settings.openai_api_key:
+    if not settings.groq_api_key:
         logger.warning(
-            "OPENAI_API_KEY is not set! "
+            "GROQ_API_KEY is not set! "
             "API calls to agents will fail."
         )
