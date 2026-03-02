@@ -3,14 +3,18 @@ fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic-settings==2.7.1
 
-# LangChain & LLM
+# LangChain & LLM (Groq - free tier)
 langchain==0.3.14
-langchain-openai==0.3.1
+langchain-groq==0.2.4
 langchain-chroma==0.2.2
+langchain-community==0.3.14
 langgraph==0.2.62
 
 # Vector DB
 chromadb==0.6.3
+
+# Free local embeddings (no API key needed)
+sentence-transformers==3.4.1
 
 # Utilities
 httpx==0.28.1

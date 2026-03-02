@@ -29,7 +29,7 @@ def mock_documents(n: int = 3):
 # ── Tests ───────────────────────────────────────────────────
 
 @patch("app.agents.retrieval.similarity_search")
-@patch("app.agents.retrieval.ChatOpenAI")
+@patch("app.agents.retrieval.ChatGroq")
 class TestRetrievalAgent:
     """Test suite for the Retrieval Agent."""
 

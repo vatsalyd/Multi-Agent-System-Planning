@@ -15,7 +15,7 @@ from app.agents.resolution import generate_resolution
 
 # ── Tests ───────────────────────────────────────────────────
 
-@patch("app.agents.resolution.ChatOpenAI")
+@patch("app.agents.resolution.ChatGroq")
 class TestResolutionAgent:
     """Test suite for the Resolution Agent."""
 

@@ -29,7 +29,7 @@ def mock_llm_response(category: str, confidence: float, summary: str):
 
 # ── Tests ───────────────────────────────────────────────────
 
-@patch("app.agents.triage.ChatOpenAI")
+@patch("app.agents.triage.ChatGroq")
 class TestTriageAgent:
     """Test suite for the Triage Agent."""
 

@@ -1,28 +1,20 @@
 """
-Triage Agent — the "receptionist" of the system.
+Triage Agent — powered by Groq (free tier).
 
-This agent receives a raw incoming ticket and classifies its intent into
-one of the predefined categories. It uses OpenAI's structured output
-(function calling) to return a consistent JSON schema with the category,
-a confidence score, and a brief summary.
-
-Why structured output?
-- Guarantees a parseable JSON response (no regex/string parsing needed)
-- Enforces the exact schema we need downstream
-- Category is constrained to a known set — prevents hallucinated categories
+Groq provides a free API for LLaMA 3.3 70B with no credit card needed.
+Sign up at https://console.groq.com to get your free API key.
 """
 
 import json
 import logging
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# The categories the Triage Agent can classify into
 CATEGORIES = [
     "IT_SUPPORT",
     "HR_POLICY",
@@ -31,7 +23,6 @@ CATEGORIES = [
     "GENERAL",
 ]
 
-# System prompt for the Triage Agent
 TRIAGE_SYSTEM_PROMPT = """You are a corporate ticket triage specialist. Your job is to classify incoming employee support tickets into the correct category.
 
 Available categories:
@@ -55,12 +46,12 @@ Rules:
 - Respond ONLY with the JSON object, no additional text"""
 
 
-def create_triage_agent() -> ChatOpenAI:
-    """Create the LLM instance for the Triage Agent."""
-    return ChatOpenAI(
-        model=settings.openai_model,
-        openai_api_key=settings.openai_api_key,
-        temperature=0.0,  # Deterministic classification
+def create_triage_agent() -> ChatGroq:
+    """Create the Groq LLM instance for the Triage Agent."""
+    return ChatGroq(
+        model=settings.groq_model,
+        groq_api_key=settings.groq_api_key,
+        temperature=0.0,
     )
 
 
@@ -77,7 +68,6 @@ def triage_ticket(ticket_text: str) -> dict:
     logger.info(f"Triaging ticket: {ticket_text[:100]}...")
 
     llm = create_triage_agent()
-
     messages = [
         SystemMessage(content=TRIAGE_SYSTEM_PROMPT),
         HumanMessage(content=f"Classify this ticket:\n\n{ticket_text}"),
@@ -85,20 +75,25 @@ def triage_ticket(ticket_text: str) -> dict:
 
     response = llm.invoke(messages)
 
+    # Strip markdown code fences if model wraps JSON in ```json ... ```
+    raw = response.content.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
     try:
-        result = json.loads(response.content)
-        # Validate the category
+        result = json.loads(raw)
         if result.get("category") not in CATEGORIES:
             logger.warning(
-                f"Unknown category '{result.get('category')}', "
-                f"defaulting to GENERAL"
+                f"Unknown category '{result.get('category')}', defaulting to GENERAL"
             )
             result["category"] = "GENERAL"
             result["confidence"] = 0.3
 
         logger.info(
-            f"Triage result: {result['category']} "
-            f"(confidence: {result['confidence']})"
+            f"Triage result: {result['category']} (confidence: {result['confidence']})"
         )
         return result
 

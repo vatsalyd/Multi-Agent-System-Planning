@@ -1,20 +1,10 @@
 """
-Retrieval Agent — the "researcher" of the system.
-
-After the Triage Agent classifies a ticket, the Retrieval Agent takes
-over. It constructs an optimized search query based on the ticket text
-and category, then performs a semantic similarity search against the
-ChromaDB vector store to find the most relevant company documentation.
-
-Why a separate Retrieval Agent (instead of just raw vector search)?
-- The agent rewrites the query to be more search-friendly
-- It can add category-specific context to improve retrieval precision
-- It returns structured results with source metadata for citation
+Retrieval Agent — powered by Groq (free tier) + local ChromaDB.
 """
 
 import logging
 
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.config import settings
@@ -32,11 +22,11 @@ Rules:
 - Respond with ONLY the optimized search query, nothing else"""
 
 
-def create_retrieval_agent() -> ChatOpenAI:
-    """Create the LLM instance for the Retrieval Agent."""
-    return ChatOpenAI(
-        model=settings.openai_model,
-        openai_api_key=settings.openai_api_key,
+def create_retrieval_agent() -> ChatGroq:
+    """Create the Groq LLM instance for the Retrieval Agent."""
+    return ChatGroq(
+        model=settings.groq_model,
+        groq_api_key=settings.groq_api_key,
         temperature=0.0,
     )
 
@@ -60,7 +50,6 @@ def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
     """
     logger.info(f"Retrieving documents for category: {category}")
 
-    # Step 1: Optimize the search query using the LLM
     llm = create_retrieval_agent()
     messages = [
         SystemMessage(content=RETRIEVAL_SYSTEM_PROMPT),
@@ -76,10 +65,8 @@ def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
     optimized_query = response.content.strip()
     logger.info(f"Optimized search query: {optimized_query}")
 
-    # Step 2: Perform similarity search against ChromaDB
     docs = similarity_search(optimized_query, k=k)
 
-    # Step 3: Format results with metadata
     results = []
     for doc in docs:
         results.append({

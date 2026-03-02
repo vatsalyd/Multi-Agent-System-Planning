@@ -1,30 +1,24 @@
 """
-Embedding utilities for the RAG pipeline.
+Free local embeddings using HuggingFace sentence-transformers.
 
-Wraps OpenAI's embedding model to convert text chunks into vector
-representations. These vectors are stored in ChromaDB and used for
-semantic similarity search when the Retrieval Agent needs to find
-relevant company documentation.
-
-Why text-embedding-3-small?
-- It's OpenAI's most cost-effective embedding model
-- 1536-dimensional vectors with excellent semantic quality
-- ~$0.02 per 1M tokens — very cheap for our knowledge base size
+Why sentence-transformers?
+- Runs 100% locally on your CPU — no API key, no cost, no internet needed
+- all-MiniLM-L6-v2 is a small (80MB), fast model with excellent quality
+- Compatible with LangChain's Chroma integration via a thin adapter
 """
 
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from app.config import settings
 
 
-def get_embeddings() -> OpenAIEmbeddings:
+def get_embeddings() -> HuggingFaceEmbeddings:
     """
-    Create and return an OpenAI embeddings instance.
-
-    Returns:
-        OpenAIEmbeddings configured with the model from settings.
+    Return a free, locally-running HuggingFace embedding model.
+    The model is downloaded once (~80MB) and cached automatically.
     """
-    return OpenAIEmbeddings(
-        model=settings.openai_embedding_model,
-        openai_api_key=settings.openai_api_key,
+    return HuggingFaceEmbeddings(
+        model_name=settings.embedding_model,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
