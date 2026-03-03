@@ -59,8 +59,13 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
+    # NOTE: We only pass the image tag (git SHA), NOT the full image URI.
+    # GitHub Actions redacts job outputs that contain secret values.
+    # The full URI includes the ECR registry (which contains the AWS region
+    # secret), so it would be masked to empty. We reconstruct the full
+    # URI in the deploy job instead.
     outputs:
-      image: ${{ steps.build-image.outputs.image }}
+      image_tag: ${{ steps.build-image.outputs.image_tag }}
 
     steps:
       - name: Checkout code
@@ -87,7 +92,7 @@ jobs:
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   # ── Job 3: Deploy to ECS ────────────────────────────────────
   deploy:
@@ -96,18 +101,7 @@ jobs:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-    env:
-      IMAGE: ${{ needs.build.outputs.image }}
-
     steps:
-      - name: Validate image output
-        run: |
-          if [ -z "$IMAGE" ]; then
-            echo "::error::No image URI received from the build job."
-            exit 1
-          fi
-          echo "Deploying image: $IMAGE"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -117,6 +111,20 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image URI
+        id: image-uri
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          FULL_IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "Deploying image: $FULL_IMAGE"
+          echo "image=$FULL_IMAGE" >> $GITHUB_OUTPUT
 
       - name: Download current task definition
         run: |
@@ -131,7 +139,7 @@ jobs:
         with:
           task-definition: task-definition.json
           container-name: multi-agent-triage
-          image: ${{ env.IMAGE }}
+          image: ${{ steps.image-uri.outputs.image }}
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
