@@ -6,6 +6,8 @@ systems (Slack bots, email parsers, ticketing systems, webhooks) can
 call to process support tickets.
 
 Endpoints:
+    GET  /                       — Root redirect (ALB health-check safe)
+    GET  /healthz                — Lightweight liveness probe
     POST /api/v1/tickets         — Full pipeline: triage → retrieve → resolve
     POST /api/v1/tickets/triage  — Triage only (classification without resolution)
     GET  /api/v1/health          — Health check
@@ -17,6 +19,7 @@ import uuid
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from app.config import settings
 from app.models import (
@@ -62,6 +65,27 @@ app.add_middleware(
 
 
 # ── Endpoints ───────────────────────────────────────────────
+
+
+@app.get(
+    "/",
+    include_in_schema=False,
+)
+async def root():
+    """Root endpoint — redirects to API docs for discoverability.
+    Also serves as a fallback if ALB health check is set to '/'."""
+    return RedirectResponse(url="/api/v1/docs")
+
+
+@app.get(
+    "/healthz",
+    tags=["System"],
+    summary="Liveness Probe",
+    description="Lightweight liveness probe for ALB / container health checks.",
+)
+async def liveness():
+    """Lightweight probe — returns 200 as fast as possible."""
+    return {"status": "ok"}
 
 
 @app.get(

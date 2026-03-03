@@ -33,7 +33,8 @@ ENV CHROMA_PERSIST_DIR=/app/chroma_data
 EXPOSE 8000
 
 # Health check for container orchestrators (ECS, Docker Compose)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# start-period=120s: sentence-transformers model loading takes ~60s+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD python -c "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()"
 
 # Run the FastAPI app with uvicorn
