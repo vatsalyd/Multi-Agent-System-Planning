@@ -137,11 +137,11 @@ jobs:
               docker login --username AWS --password-stdin \
               ${{ steps.login-ecr.outputs.registry }}
 
+            # Clean up old Docker data to free disk space
+            docker system prune -af --volumes 2>/dev/null || true
+
             # Pull new image
             docker pull ${{ steps.image-uri.outputs.image }}
-
-            # Stop and remove old container (if running)
-            docker rm -f multi-agent-triage 2>/dev/null || true
 
             # Start new container
             docker run -d \

@@ -1,8 +1,36 @@
-# 🤖 Multi-Agent Enterprise Intelligence & Triage System
+# � HelixDesk — AI-Powered Enterprise Support Intelligence
 
-A production-ready, multi-agent AI system that autonomously triages incoming corporate support requests, routes them to specialized agents, and generates data-backed resolution drafts using internal knowledge bases.
+<div align="center">
 
-## Architecture
+**Autonomous multi-agent system that triages, researches, and resolves enterprise support tickets in seconds — not hours.**
+
+[![CI/CD Pipeline](https://github.com/vatsalyd/Multi-Agent-System-Planning/actions/workflows/deploy.yml/badge.svg)](https://github.com/vatsalyd/Multi-Agent-System-Planning/actions)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+</div>
+
+---
+
+## 🚀 What is HelixDesk?
+
+HelixDesk is a **production-ready, multi-agent AI system** built for enterprise support teams. It processes incoming support tickets through an intelligent pipeline of specialized AI agents that classify, research, and draft professional resolutions — all backed by your company's internal knowledge base.
+
+Instead of a single LLM prompt, HelixDesk uses a **state-machine orchestrated agent graph** where each agent is an expert at one task, producing faster, more accurate, and citation-backed responses.
+
+### ✨ Key Capabilities
+
+- 🏷️ **Smart Triage** — Instantly classifies tickets into categories (IT, HR, Expense, Onboarding) with confidence scoring
+- 🔍 **Contextual Retrieval** — Searches your internal knowledge base using semantic vector search to find the most relevant policy documents
+- 📝 **Citation-Backed Resolutions** — Generates professional response drafts with inline references to source documents
+- ⚡ **Human Escalation** — Automatically routes low-confidence tickets to human agents instead of guessing
+- 🔗 **API-First Design** — RESTful API with Swagger UI, ready to integrate with Slack, email parsers, ticketing systems, and webhooks
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 graph TB
@@ -10,23 +38,23 @@ graph TB
         WH["Webhook / API Client"]
     end
 
-    subgraph "API Layer - FastAPI"
+    subgraph "API Layer — FastAPI"
         API["FastAPI Server<br/>POST /api/v1/tickets"]
-        HEALTH["GET /api/v1/health"]
+        HEALTH["GET /healthz"]
     end
 
-    subgraph "Agent Orchestration - LangGraph"
+    subgraph "Agent Orchestration — LangGraph"
         TA["Triage Agent<br/>Classifies: IT | HR | EXPENSE | ONBOARDING"]
         GATE{"Confidence > 0.5?"}
-        RA["Retrieval Agent<br/>Searches knowledge base via ChromaDB"]
-        RES["Resolution Agent<br/>Generates draft with citations"]
+        RA["Retrieval Agent<br/>Semantic search via ChromaDB"]
+        RES["Resolution Agent<br/>Drafts response with citations"]
         ESC["Human Escalation"]
     end
 
     subgraph "Knowledge Layer"
-        EMB["OpenAI Embeddings"]
+        EMB["Sentence Transformers<br/>all-MiniLM-L6-v2"]
         CDB[("ChromaDB Vector Store")]
-        KB["Company Docs - Markdown"]
+        KB["Company Docs — Markdown"]
     end
 
     WH -->|HTTP POST| API
@@ -42,144 +70,213 @@ graph TB
     KB --> EMB --> CDB
 ```
 
-## How It Works
+### Agent Pipeline
 
 | Step | Agent | What It Does |
 |------|-------|-------------|
-| 1 | **Triage Agent** | Classifies ticket intent (IT, HR, Expense, Onboarding, General) |
-| 2 | **Retrieval Agent** | Searches ChromaDB for relevant company policy documents |
-| 3 | **Resolution Agent** | Generates a professional response draft with inline citations |
+| 1 | **Triage Agent** | Classifies ticket intent and assigns a confidence score |
+| 2 | **Retrieval Agent** | Performs semantic vector search against the knowledge base |
+| 3 | **Resolution Agent** | Generates a professional response with inline citations |
 
-If the Triage Agent's confidence is below 50%, the ticket is automatically escalated to a human instead.
+If the Triage Agent's confidence falls below **50%**, the ticket is automatically **escalated to a human** instead of producing a low-quality response.
 
-## Tech Stack
+---
 
-- **Orchestration**: [LangGraph](https://github.com/langchain-ai/langgraph) (state machine for multi-agent coordination)
-- **LLM**: OpenAI GPT-3.5/4 (via LangChain)
-- **Vector DB**: [ChromaDB](https://www.trychroma.com/) (local, persistent)
-- **API**: [FastAPI](https://fastapi.tiangolo.com/) with Pydantic validation
-- **Deployment**: Docker → AWS ECR → AWS ECS Fargate
-- **CI/CD**: GitHub Actions
+## ⚙️ Tech Stack
 
-## Quick Start
+| Component | Technology | Details |
+|-----------|-----------|---------|
+| **LLM** | [Groq](https://groq.com/) | `llama-3.3-70b-versatile` — free, fast inference via Groq Cloud |
+| **Embeddings** | [Sentence Transformers](https://www.sbert.net/) | `all-MiniLM-L6-v2` — runs 100% locally, no API costs |
+| **Vector Database** | [ChromaDB](https://www.trychroma.com/) | Local persistent storage for document embeddings |
+| **Orchestration** | [LangGraph](https://github.com/langchain-ai/langgraph) | State machine for multi-agent coordination and routing |
+| **API Framework** | [FastAPI](https://fastapi.tiangolo.com/) | Async REST API with Pydantic validation and auto-generated docs |
+| **Deployment** | Docker → AWS ECR → AWS EC2 | Containerized deployments with CI/CD via GitHub Actions |
 
-### Prerequisites
+---
+
+## 💼 Use Cases
+
+| Use Case | Description |
+|----------|-------------|
+| **IT Helpdesk Automation** | Automatically resolve password resets, VPN issues, software installation requests, and access provisioning tickets |
+| **HR Query Resolution** | Instantly answer questions about leave policies, onboarding procedures, benefits, and company handbook references |
+| **Expense Report Triage** | Classify and process expense-related queries by referencing reimbursement policies and approval workflows |
+| **Employee Onboarding** | Guide new hires through setup procedures, tool access, and first-week checklists with accurate documentation links |
+| **Knowledge Base Q&A** | Turn static company documentation into an interactive, searchable support assistant |
+| **Ticket Routing & Prioritization** | Pre-classify and route tickets to the correct department before a human ever sees them |
+
+---
+
+## 🚀 Getting Started
+
+### Option 1 — Run Locally
+
+#### Prerequisites
 - Python 3.12+
-- OpenAI API key
+- A free [Groq API key](https://console.groq.com/)
 
-### Setup
+#### Setup
 
 ```bash
-# Clone
+# Clone the repository
 git clone https://github.com/vatsalyd/Multi-Agent-System-Planning.git
 cd Multi-Agent-System-Planning
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # macOS/Linux
+.venv\Scripts\activate          # Windows
+# source .venv/bin/activate     # macOS / Linux
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Configure environment
-copy .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+copy .env.example .env          # Windows
+# cp .env.example .env          # macOS / Linux
 ```
 
-### Populate Knowledge Base
+Edit `.env` and add your Groq API key:
+
+```env
+GROQ_API_KEY=gsk_your_key_here
+```
+
+#### Populate Knowledge Base
 
 ```bash
 python -m app.rag.ingest
 ```
 
-### Run the Server
+#### Start the Server
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Try It
+Open **http://localhost:8000/api/v1/docs** for the interactive Swagger UI.
 
-Open http://localhost:8000/api/v1/docs for the interactive Swagger UI.
+---
 
-**Submit a ticket:**
+### Option 2 — Run with Docker
+
 ```bash
-curl -X POST http://localhost:8000/api/v1/tickets \
-  -H "Content-Type: application/json" \
-  -d '{"ticket_text": "I forgot my VPN password and cannot connect remotely."}'
+# Using Docker Compose (recommended)
+docker-compose up --build
+
+# Or standalone
+docker build -t helixdesk .
+docker run -p 8000:8000 --env-file .env helixdesk
 ```
 
-## API Reference
+---
+
+### Option 3 — Deployed Service (AWS EC2)
+
+HelixDesk is deployed on AWS EC2 and accessible at:
+
+```
+http://<EC2-ELASTIC-IP>:8000/api/v1/docs    # Swagger UI
+http://<EC2-ELASTIC-IP>:8000/healthz         # Health Check
+```
+
+Every push to `main` triggers the CI/CD pipeline which automatically builds, tests, and deploys the latest version.
+
+---
+
+## 📡 API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/v1/tickets` | Full pipeline: triage → retrieve → resolve |
 | `POST` | `/api/v1/tickets/triage` | Classification only (no resolution) |
-| `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/docs` | Swagger UI |
+| `GET` | `/api/v1/health` | Detailed health check with version info |
+| `GET` | `/healthz` | Lightweight liveness probe |
+| `GET` | `/api/v1/docs` | Interactive Swagger UI |
 
-## Running Tests
+### Example Request
+
+```bash
+curl -X POST http://localhost:8000/api/v1/tickets \
+  -H "Content-Type: application/json" \
+  -d '{"ticket_text": "I forgot my VPN password and cannot connect remotely.", "source": "slack"}'
+```
+
+### Example Response
+
+```json
+{
+  "ticket_id": "a1b2c3d4-...",
+  "category": "IT",
+  "confidence": 0.92,
+  "summary": "Employee unable to access VPN due to forgotten password.",
+  "resolution": "To reset your VPN password, follow these steps: ...",
+  "sources": ["vpn_setup_guide.md", "it_security_policy.md"],
+  "status": "resolved",
+  "processing_time_ms": 1840
+}
+```
+
+---
+
+## 🧪 Running Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-All tests mock external APIs — no API key needed.
+All tests use mocked LLM calls — **no API key or network required**.
 
-## Docker
+---
 
-```bash
-# Build and run
-docker-compose up --build
+## 🔄 CI/CD Pipeline
 
-# Or standalone
-docker build -t multi-agent-triage .
-docker run -p 8000:8000 --env-file .env multi-agent-triage
+The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`:
+
 ```
-
-## CI/CD (GitHub Actions → AWS ECS)
-
-The pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`:
-
-1. **Test**: `pytest` with mocked APIs
-2. **Build**: Docker image → push to AWS ECR
-3. **Deploy**: Update ECS Fargate service
+Push to main → Run Tests → Build & Push to ECR → SSH Deploy to EC2
+```
 
 ### Required GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
-| `AWS_ACCESS_KEY_ID` | IAM credentials |
-| `AWS_SECRET_ACCESS_KEY` | IAM credentials |
-| `AWS_REGION` | e.g., `us-east-1` |
-| `ECR_REPOSITORY` | ECR repo name |
-| `ECS_CLUSTER` | ECS cluster name |
-| `ECS_SERVICE` | ECS service name |
+| `AWS_ACCESS_KEY_ID` | IAM credentials for ECR access |
+| `AWS_SECRET_ACCESS_KEY` | IAM credentials for ECR access |
+| `AWS_REGION` | AWS region (e.g., `us-east-1`) |
+| `ECR_REPOSITORY` | ECR repository name |
+| `EC2_HOST` | EC2 Elastic IP address |
+| `EC2_USER` | EC2 SSH user (e.g., `ec2-user`) |
+| `EC2_SSH_KEY` | EC2 private key (`.pem` contents) |
+| `GROQ_API_KEY` | Groq API key for LLM inference |
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
 ├── app/
-│   ├── main.py              # FastAPI entry point
-│   ├── config.py            # Settings (pydantic-settings)
-│   ├── models.py            # Request/response schemas
+│   ├── main.py              # FastAPI entry point & route handlers
+│   ├── config.py            # Centralized settings (pydantic-settings)
+│   ├── models.py            # Request/response Pydantic schemas
 │   ├── agents/
-│   │   ├── triage.py        # Intent classification
-│   │   ├── retrieval.py     # RAG document retrieval
-│   │   ├── resolution.py    # Response draft generation
-│   │   └── graph.py         # LangGraph state machine
+│   │   ├── triage.py        # Intent classification agent
+│   │   ├── retrieval.py     # RAG document retrieval agent
+│   │   ├── resolution.py    # Response generation agent
+│   │   └── graph.py         # LangGraph state machine orchestrator
 │   ├── rag/
-│   │   ├── embeddings.py    # OpenAI embedding wrapper
-│   │   ├── vectorstore.py   # ChromaDB client
-│   │   └── ingest.py        # Knowledge base ingestion
-│   └── data/knowledge_base/ # Company policy docs
-├── tests/                   # Unit & integration tests
-├── Dockerfile               # Multi-stage build
-├── docker-compose.yml       # Local dev
-└── .github/workflows/       # CI/CD
+│   │   ├── embeddings.py    # Sentence Transformers embedding wrapper
+│   │   ├── vectorstore.py   # ChromaDB client & query interface
+│   │   └── ingest.py        # Knowledge base ingestion script
+│   └── data/knowledge_base/ # Company policy documents (Markdown)
+├── tests/                   # Unit & integration tests (mocked)
+├── Dockerfile               # Multi-stage production build
+├── docker-compose.yml       # Local development setup
+└── .github/workflows/       # CI/CD pipeline
 ```
 
-## License
+---
 
-MIT
+## 📄 License
+
+MIT — see [LICENSE](LICENSE) for details.

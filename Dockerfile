@@ -5,9 +5,13 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# Install dependencies first (layer caching — deps change less often than code)
+# Install CPU-only PyTorch FIRST (saves ~3GB by avoiding CUDA libraries)
+# sentence-transformers depends on torch; if we don't pre-install the CPU
+# version, pip will pull the full CUDA build which is ~2GB larger.
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install \
+    torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ── Stage 2: Runtime ────────────────────────────────────────
 # Start fresh from a clean slim image — no build tools, no pip cache.
