@@ -176,8 +176,8 @@ docker run -p 8000:8000 --env-file .env helixdesk
 HelixDesk is deployed on AWS EC2 and accessible at:
 
 ```
-http://<EC2-ELASTIC-IP>:8000/api/v1/docs    # Swagger UI
-http://<EC2-ELASTIC-IP>:8000/healthz         # Health Check
+http://44.214.206.48:8000/api/v1/docs    # Swagger UI
+http://44.214.206.48:8000/healthz         # Health Check
 ```
 
 
