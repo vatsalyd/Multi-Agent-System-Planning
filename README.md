@@ -87,7 +87,7 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 | Component | Technology | Details |
 |-----------|-----------|---------|
 | **LLM** | [Groq](https://groq.com/) | `llama-3.3-70b-versatile` — free, fast inference via Groq Cloud |
-| **Embeddings** | [Sentence Transformers](https://www.sbert.net/) | `all-MiniLM-L6-v2` — runs 100% locally, no API costs |
+| **Embeddings** | [Sentence Transformers](https://www.sbert.net/) | `all-MiniLM-L6-v2` 
 | **Vector Database** | [ChromaDB](https://www.trychroma.com/) | Local persistent storage for document embeddings |
 | **Orchestration** | [LangGraph](https://github.com/langchain-ai/langgraph) | State machine for multi-agent coordination and routing |
 | **API Framework** | [FastAPI](https://fastapi.tiangolo.com/) | Async REST API with Pydantic validation and auto-generated docs |
@@ -180,7 +180,6 @@ http://<EC2-ELASTIC-IP>:8000/api/v1/docs    # Swagger UI
 http://<EC2-ELASTIC-IP>:8000/healthz         # Health Check
 ```
 
-Every push to `main` triggers the CI/CD pipeline which automatically builds, tests, and deploys the latest version.
 
 ---
 
