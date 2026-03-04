@@ -32,43 +32,11 @@ Instead of a single LLM prompt, HelixDesk uses a **state-machine orchestrated ag
 
 ## 🏗️ Architecture
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        WH["Webhook / API Client"]
-    end
+<div align="center">
 
-    subgraph "API Layer — FastAPI"
-        API["FastAPI Server<br/>POST /api/v1/tickets"]
-        HEALTH["GET /healthz"]
-    end
+![HelixDesk Architecture](architecture.png)
 
-    subgraph "Agent Orchestration — LangGraph"
-        TA["Triage Agent<br/>Classifies: IT | HR | EXPENSE | ONBOARDING"]
-        GATE{"Confidence > 0.5?"}
-        RA["Retrieval Agent<br/>Semantic search via ChromaDB"]
-        RES["Resolution Agent<br/>Drafts response with citations"]
-        ESC["Human Escalation"]
-    end
-
-    subgraph "Knowledge Layer"
-        EMB["Sentence Transformers<br/>all-MiniLM-L6-v2"]
-        CDB[("ChromaDB Vector Store")]
-        KB["Company Docs — Markdown"]
-    end
-
-    WH -->|HTTP POST| API
-    API --> TA
-    TA --> GATE
-    GATE -->|Yes| RA
-    GATE -->|No| ESC
-    RA -->|query| CDB
-    CDB -->|chunks| RA
-    RA --> RES
-    RES --> API
-    ESC --> API
-    KB --> EMB --> CDB
-```
+</div>
 
 ### Agent Pipeline
 
