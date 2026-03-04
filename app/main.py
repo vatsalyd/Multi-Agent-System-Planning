@@ -1,16 +1,5 @@
 """
-FastAPI application — the production API layer.
-
-This wraps the entire multi-agent system in a REST API that external
-systems (Slack bots, email parsers, ticketing systems, webhooks) can
-call to process support tickets.
-
-Endpoints:
-    GET  /                       — Root redirect (ALB health-check safe)
-    GET  /healthz                — Lightweight liveness probe
-    POST /api/v1/tickets         — Full pipeline: triage → retrieve → resolve
-    POST /api/v1/tickets/triage  — Triage only (classification without resolution)
-    GET  /api/v1/health          — Health check
+FastAPI application — REST API for the multi-agent triage system.
 """
 
 import logging
@@ -32,14 +21,12 @@ from app.models import (
 from app.agents.triage import triage_ticket
 from app.agents.graph import process_ticket
 
-# ── Logging Setup ───────────────────────────────────────────
 logging.basicConfig(
     level=settings.log_level,
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# ── FastAPI App ─────────────────────────────────────────────
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -53,8 +40,6 @@ app = FastAPI(
     redoc_url="/api/v1/redoc",
 )
 
-# ── CORS Middleware ─────────────────────────────────────────
-# Allow all origins for development. Restrict in production.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -64,16 +49,8 @@ app.add_middleware(
 )
 
 
-# ── Endpoints ───────────────────────────────────────────────
-
-
-@app.get(
-    "/",
-    include_in_schema=False,
-)
+@app.get("/", include_in_schema=False)
 async def root():
-    """Root endpoint — redirects to API docs for discoverability.
-    Also serves as a fallback if ALB health check is set to '/'."""
     return RedirectResponse(url="/api/v1/docs")
 
 
@@ -81,10 +58,8 @@ async def root():
     "/healthz",
     tags=["System"],
     summary="Liveness Probe",
-    description="Lightweight liveness probe for ALB / container health checks.",
 )
 async def liveness():
-    """Lightweight probe — returns 200 as fast as possible."""
     return {"status": "ok"}
 
 
@@ -93,10 +68,8 @@ async def liveness():
     response_model=HealthResponse,
     tags=["System"],
     summary="Health Check",
-    description="Returns the health status and version of the service.",
 )
 async def health_check():
-    """Health check endpoint for load balancers and monitoring."""
     return HealthResponse(
         status="healthy",
         version=settings.app_version,
@@ -110,28 +83,15 @@ async def health_check():
     responses={500: {"model": ErrorResponse}},
     tags=["Tickets"],
     summary="Submit a Ticket",
-    description=(
-        "Submit a support ticket for full processing through the "
-        "multi-agent pipeline: Triage → Retrieval → Resolution."
-    ),
 )
 async def submit_ticket(request: TicketRequest):
-    """
-    Process a ticket through the full agent pipeline.
-
-    1. Triage Agent classifies the ticket
-    2. Retrieval Agent finds relevant documentation
-    3. Resolution Agent drafts a response
-
-    If confidence is too low, the ticket is escalated to a human.
-    """
+    """Process a ticket through the full agent pipeline: Triage → Retrieval → Resolution."""
     logger.info(
         f"Received ticket from source: {request.source} — "
         f"{request.ticket_text[:80]}..."
     )
 
     try:
-        # Run the full LangGraph pipeline
         result = process_ticket(
             ticket_text=request.ticket_text,
             source=request.source,
@@ -162,21 +122,12 @@ async def submit_ticket(request: TicketRequest):
     responses={500: {"model": ErrorResponse}},
     tags=["Tickets"],
     summary="Triage Only",
-    description=(
-        "Classify a ticket without generating a resolution. "
-        "Useful for routing or analytics."
-    ),
 )
 async def triage_only(request: TicketRequest):
-    """
-    Classify a ticket without running the full pipeline.
-
-    Returns only the triage result: category, confidence, and summary.
-    """
+    """Classify a ticket without running the full pipeline."""
     logger.info(f"Triage-only request: {request.ticket_text[:80]}...")
 
     try:
-        # Run only the Triage Agent
         result = triage_ticket(request.ticket_text)
         ticket_id = str(uuid.uuid4())
 
@@ -196,17 +147,11 @@ async def triage_only(request: TicketRequest):
         )
 
 
-# ── Startup Event ───────────────────────────────────────────
-
 @app.on_event("startup")
 async def startup_event():
-    """Log application startup."""
     logger.info(
         f"{settings.app_name} v{settings.app_version} started "
         f"on {settings.host}:{settings.port}"
     )
     if not settings.groq_api_key:
-        logger.warning(
-            "GROQ_API_KEY is not set! "
-            "API calls to agents will fail."
-        )
+        logger.warning("GROQ_API_KEY is not set! API calls to agents will fail.")

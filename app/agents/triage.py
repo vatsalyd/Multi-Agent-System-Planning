@@ -1,8 +1,5 @@
 """
-Triage Agent — powered by Groq (free tier).
-
-Groq provides a free API for LLaMA 3.3 70B with no credit card needed.
-Sign up at https://console.groq.com to get your free API key.
+Triage Agent — classifies tickets using Groq (LLaMA 3.3 70B).
 """
 
 import json
@@ -47,7 +44,6 @@ Rules:
 
 
 def create_triage_agent() -> ChatGroq:
-    """Create the Groq LLM instance for the Triage Agent."""
     return ChatGroq(
         model=settings.groq_model,
         groq_api_key=settings.groq_api_key,
@@ -56,15 +52,7 @@ def create_triage_agent() -> ChatGroq:
 
 
 def triage_ticket(ticket_text: str) -> dict:
-    """
-    Classify an incoming ticket into a category.
-
-    Args:
-        ticket_text: The raw text of the incoming support ticket.
-
-    Returns:
-        dict with keys: category, confidence, summary
-    """
+    """Classify an incoming ticket into a category."""
     logger.info(f"Triaging ticket: {ticket_text[:100]}...")
 
     llm = create_triage_agent()

@@ -1,5 +1,5 @@
 """
-Resolution Agent — powered by Groq (free tier).
+Resolution Agent — generates citation-backed response drafts using Groq.
 """
 
 import logging
@@ -37,7 +37,6 @@ Keep the resolution concise but thorough (150-300 words)."""
 
 
 def create_resolution_agent() -> ChatGroq:
-    """Create the Groq LLM instance for the Resolution Agent."""
     return ChatGroq(
         model=settings.groq_model,
         groq_api_key=settings.groq_api_key,
@@ -50,17 +49,7 @@ def generate_resolution(
     category: str,
     retrieved_docs: list,
 ) -> dict:
-    """
-    Generate a resolution draft for a classified ticket.
-
-    Args:
-        ticket_text: The original ticket text.
-        category: The classified category.
-        retrieved_docs: List of dicts with 'content' and 'source' keys.
-
-    Returns:
-        dict with 'resolution' and 'sources' keys.
-    """
+    """Generate a resolution draft using the ticket, category, and retrieved documents."""
     logger.info(f"Generating resolution for category: {category}")
 
     docs_text = ""

@@ -1,19 +1,12 @@
 """
-Pydantic models for the FastAPI request/response schemas.
-
-These enforce type safety at the API boundary — invalid requests
-are rejected with clear error messages before they reach any agent.
+Pydantic models for API request/response schemas.
 """
 
 from pydantic import BaseModel, Field
 from typing import Optional
 
 
-# ── Request Models ──────────────────────────────────────────
-
 class TicketRequest(BaseModel):
-    """Incoming ticket submission payload."""
-
     ticket_text: str = Field(
         ...,
         min_length=10,
@@ -32,11 +25,7 @@ class TicketRequest(BaseModel):
     )
 
 
-# ── Response Models ─────────────────────────────────────────
-
 class TriageResult(BaseModel):
-    """Result from triage-only endpoint."""
-
     ticket_id: str
     category: str
     confidence: float
@@ -45,8 +34,6 @@ class TriageResult(BaseModel):
 
 
 class ResolutionResponse(BaseModel):
-    """Full resolution response from the agent pipeline."""
-
     ticket_id: str
     category: str
     confidence: float
@@ -58,15 +45,11 @@ class ResolutionResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Health check response."""
-
     status: str = "healthy"
     version: str
     service: str
 
 
 class ErrorResponse(BaseModel):
-    """Error response for failed requests."""
-
     error: str
     detail: Optional[str] = None

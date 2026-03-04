@@ -1,5 +1,5 @@
 """
-Retrieval Agent — powered by Groq (free tier) + local ChromaDB.
+Retrieval Agent — optimizes search queries and retrieves docs from ChromaDB.
 """
 
 import logging
@@ -23,7 +23,6 @@ Rules:
 
 
 def create_retrieval_agent() -> ChatGroq:
-    """Create the Groq LLM instance for the Retrieval Agent."""
     return ChatGroq(
         model=settings.groq_model,
         groq_api_key=settings.groq_api_key,
@@ -32,22 +31,7 @@ def create_retrieval_agent() -> ChatGroq:
 
 
 def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
-    """
-    Retrieve relevant documents for a classified ticket.
-
-    Steps:
-    1. Use LLM to optimize the search query
-    2. Perform similarity search against ChromaDB
-    3. Return documents with metadata
-
-    Args:
-        ticket_text: The raw ticket text.
-        category: The classified category from the Triage Agent.
-        k: Number of documents to retrieve (default: 5).
-
-    Returns:
-        List of dicts with 'content' and 'source' keys.
-    """
+    """Optimize the search query via LLM, then retrieve relevant docs from ChromaDB."""
     logger.info(f"Retrieving documents for category: {category}")
 
     llm = create_retrieval_agent()
