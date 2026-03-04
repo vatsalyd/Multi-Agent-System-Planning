@@ -1,17 +1,16 @@
 # ── Stage 1: Builder ────────────────────────────────────────
-# Install dependencies in a virtual environment so we can copy
-# only the venv to the final image (keeps it small and clean).
+# Install dependencies into the default site-packages so pip can
+# detect already-installed packages across multiple install commands.
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# Install CPU-only PyTorch FIRST (saves ~3GB by avoiding CUDA libraries)
-# sentence-transformers depends on torch; if we don't pre-install the CPU
-# version, pip will pull the full CUDA build which is ~2GB larger.
+# Install CPU-only PyTorch FIRST (saves ~3GB by avoiding CUDA).
+# Then install the rest — pip sees torch is already present and skips it.
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install \
+RUN pip install --no-cache-dir \
     torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir --prefix=/install -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
 # ── Stage 2: Runtime ────────────────────────────────────────
 # Start fresh from a clean slim image — no build tools, no pip cache.
@@ -20,7 +19,8 @@ FROM python:3.12-slim AS runtime
 WORKDIR /app
 
 # Copy installed packages from builder
-COPY --from=builder /install /usr/local
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY app/ ./app/
