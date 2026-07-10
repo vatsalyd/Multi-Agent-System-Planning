@@ -9,6 +9,7 @@
 ## Corrections
 - LLM factory is `app/llm/provider.py:create_llm()` — do not import `ChatGroq` directly in agent files
 - All agent functions are async (`async def`) — use `await`, never call synchronously
+- Retrieved chunks use `app/rag/vectorstore.py:RetrievedChunk` dataclass — not LangChain `Document` or dicts
 - `compiled_graph` is built at module import time in `app/agents/graph.py` — do not re-instantiate
 - Embeddings run on CPU only (`model_kwargs={"device": "cpu"}`) — do not change to GPU
 - `app/config.py` uses `pydantic-settings` with `.env` — do not hardcode values
@@ -43,9 +44,10 @@
 - State assumptions explicitly. If uncertain, ask. If simpler approach exists, say so.
 - No features beyond what was asked. No speculative abstractions.
 - Match existing style. Only clean up your own mess.
+- Keeping docs up to date is highest priority — CLAUDE.md, CONTEXT/, SPECS/, and .claude/rules/ must reflect every change
 
 ## Known Complexity
 - `app/agents/graph.py` — LangGraph state machine with conditional routing; understand `AgentState` TypedDict before modifying
-- `app/rag/ingest.py` — knowledge base ingestion runs as standalone script (`python -m app.rag.ingest`), not part of API startup
+- `app/rag/ingest.py` — knowledge base ingestion is idempotent (clears before re-add), runs as standalone script (`python -m app.rag.ingest`)
 - Triage JSON parsing — LLM sometimes wraps output in markdown code fences; stripping logic is fragile
 - Resolution agent response format uses `RESOLUTION:` and `SOURCES:` markers — changing prompt format breaks response parsing

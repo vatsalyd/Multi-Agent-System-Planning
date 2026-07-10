@@ -2,6 +2,7 @@
 ChromaDB vector store — persistent local storage for document embeddings.
 """
 
+import functools
 from dataclasses import dataclass
 
 import chromadb
@@ -18,6 +19,7 @@ class RetrievedChunk:
     source: str
 
 
+@functools.lru_cache(maxsize=1)
 def get_vectorstore() -> Chroma:
     client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
     return Chroma(
@@ -25,6 +27,14 @@ def get_vectorstore() -> Chroma:
         collection_name=settings.chroma_collection_name,
         embedding_function=get_embeddings(),
     )
+
+
+def clear_collection():
+    """Delete all documents from the collection. Called before re-ingestion."""
+    store = get_vectorstore()
+    store.delete_collection()
+    # Reset cache so next get_vectorstore() creates a fresh client
+    get_vectorstore.cache_clear()
 
 
 def similarity_search(query: str, k: int = 5) -> list[RetrievedChunk]:
