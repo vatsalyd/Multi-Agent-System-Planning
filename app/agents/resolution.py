@@ -46,10 +46,10 @@ async def generate_resolution(
     docs_text = ""
     sources = set()
     for i, doc in enumerate(retrieved_docs, 1):
-        docs_text += f"\n--- Document {i} (Source: {doc['source']}) ---\n"
-        docs_text += doc["content"]
+        docs_text += f"\n--- Document {i} (Source: {doc.source}) ---\n"
+        docs_text += doc.content
         docs_text += "\n"
-        sources.add(doc["source"])
+        sources.add(doc.source)
 
     llm = create_llm(temperature=0.3)
 

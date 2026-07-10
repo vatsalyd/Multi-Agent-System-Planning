@@ -11,6 +11,7 @@ from unittest.mock import patch, AsyncMock, MagicMock
 import pytest
 
 from app.agents.retrieval import retrieve_documents
+from app.rag.vectorstore import RetrievedChunk
 from tests.conftest import mock_documents
 
 
@@ -41,8 +42,9 @@ class TestRetrievalAgent:
         )
 
         assert len(result) == 3
-        assert all("content" in doc for doc in result)
-        assert all("source" in doc for doc in result)
+        assert all(isinstance(doc, RetrievedChunk) for doc in result)
+        assert all(hasattr(doc, "content") for doc in result)
+        assert all(hasattr(doc, "source") for doc in result)
         mock_search.assert_called_once()
 
     async def test_returns_empty_on_no_results(self, mock_factory, mock_search):
@@ -81,7 +83,7 @@ class TestRetrievalAgent:
         mock_search.assert_called_once_with("optimized query", k=2)
 
     async def test_result_format(self, mock_factory, mock_search):
-        """Results should have 'content' and 'source' keys."""
+        """Results should be RetrievedChunk with content and source."""
         mock_instance = AsyncMock()
         mock_response = MagicMock()
         mock_response.content = "test query"
@@ -93,6 +95,5 @@ class TestRetrievalAgent:
         result = await retrieve_documents("test", "GENERAL", k=1)
 
         assert len(result) == 1
-        assert "content" in result[0]
-        assert "source" in result[0]
-        assert result[0]["source"] == "policy_1.md"
+        assert result[0].content == "This is document chunk 1 content."
+        assert result[0].source == "policy_1.md"

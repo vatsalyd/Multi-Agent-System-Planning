@@ -2,11 +2,20 @@
 ChromaDB vector store — persistent local storage for document embeddings.
 """
 
+from dataclasses import dataclass
+
 import chromadb
 from langchain_chroma import Chroma
 
 from app.config import settings
 from app.rag.embeddings import get_embeddings
+
+
+@dataclass(frozen=True)
+class RetrievedChunk:
+    """Domain type for a retrieved document chunk."""
+    content: str
+    source: str
 
 
 def get_vectorstore() -> Chroma:
@@ -18,6 +27,13 @@ def get_vectorstore() -> Chroma:
     )
 
 
-def similarity_search(query: str, k: int = 5) -> list:
+def similarity_search(query: str, k: int = 5) -> list[RetrievedChunk]:
     store = get_vectorstore()
-    return store.similarity_search(query, k=k)
+    docs = store.similarity_search(query, k=k)
+    return [
+        RetrievedChunk(
+            content=doc.page_content,
+            source=doc.metadata.get("source", "unknown"),
+        )
+        for doc in docs
+    ]
