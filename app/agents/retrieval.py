@@ -4,10 +4,9 @@ Retrieval Agent — optimizes search queries and retrieves docs from ChromaDB.
 
 import logging
 
-from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from app.config import settings
+from app.llm.provider import create_llm
 from app.rag.vectorstore import similarity_search
 
 logger = logging.getLogger(__name__)
@@ -22,19 +21,11 @@ Rules:
 - Respond with ONLY the optimized search query, nothing else"""
 
 
-def create_retrieval_agent() -> ChatGroq:
-    return ChatGroq(
-        model=settings.groq_model,
-        groq_api_key=settings.groq_api_key,
-        temperature=0.0,
-    )
-
-
-def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
+async def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
     """Optimize the search query via LLM, then retrieve relevant docs from ChromaDB."""
     logger.info(f"Retrieving documents for category: {category}")
 
-    llm = create_retrieval_agent()
+    llm = create_llm(temperature=0.0)
     messages = [
         SystemMessage(content=RETRIEVAL_SYSTEM_PROMPT),
         HumanMessage(
@@ -45,7 +36,7 @@ def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
             )
         ),
     ]
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     optimized_query = response.content.strip()
     logger.info(f"Optimized search query: {optimized_query}")
 

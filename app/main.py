@@ -92,7 +92,7 @@ async def submit_ticket(request: TicketRequest):
     )
 
     try:
-        result = process_ticket(
+        result = await process_ticket(
             ticket_text=request.ticket_text,
             source=request.source,
         )
@@ -128,7 +128,7 @@ async def triage_only(request: TicketRequest):
     logger.info(f"Triage-only request: {request.ticket_text[:80]}...")
 
     try:
-        result = triage_ticket(request.ticket_text)
+        result = await triage_ticket(request.ticket_text)
         ticket_id = str(uuid.uuid4())
 
         return TriageResult(

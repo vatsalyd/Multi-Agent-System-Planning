@@ -35,10 +35,10 @@ class AgentState(TypedDict):
     error: str
 
 
-def triage_node(state: AgentState) -> dict:
+async def triage_node(state: AgentState) -> dict:
     logger.info(f"[Triage Node] Processing ticket {state['ticket_id']}")
     try:
-        result = triage_ticket(state["ticket_text"])
+        result = await triage_ticket(state["ticket_text"])
         return {
             "category": result["category"],
             "confidence": result["confidence"],
@@ -56,10 +56,10 @@ def triage_node(state: AgentState) -> dict:
         }
 
 
-def retrieval_node(state: AgentState) -> dict:
+async def retrieval_node(state: AgentState) -> dict:
     logger.info(f"[Retrieval Node] Searching docs for category: {state['category']}")
     try:
-        docs = retrieve_documents(
+        docs = await retrieve_documents(
             ticket_text=state["ticket_text"],
             category=state["category"],
             k=5,
@@ -77,10 +77,10 @@ def retrieval_node(state: AgentState) -> dict:
         }
 
 
-def resolution_node(state: AgentState) -> dict:
+async def resolution_node(state: AgentState) -> dict:
     logger.info("[Resolution Node] Generating resolution draft")
     try:
-        result = generate_resolution(
+        result = await generate_resolution(
             ticket_text=state["ticket_text"],
             category=state["category"],
             retrieved_docs=state["retrieved_docs"],
@@ -151,7 +151,7 @@ def build_graph() -> StateGraph:
 compiled_graph = build_graph()
 
 
-def process_ticket(ticket_text: str, source: str = "api") -> dict:
+async def process_ticket(ticket_text: str, source: str = "api") -> dict:
     """Process a ticket through the full agent pipeline."""
     start_time = time.time()
 
@@ -172,7 +172,7 @@ def process_ticket(ticket_text: str, source: str = "api") -> dict:
 
     logger.info(f"Processing ticket {initial_state['ticket_id']} from {source}")
 
-    final_state = compiled_graph.invoke(initial_state)
+    final_state = await compiled_graph.ainvoke(initial_state)
 
     elapsed = (time.time() - start_time) * 1000
     final_state["processing_time_ms"] = round(elapsed, 2)
