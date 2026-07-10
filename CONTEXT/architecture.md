@@ -19,7 +19,7 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 | Resolution | `app/agents/resolution.py` | Generates citation-backed response (async) |
 | Graph | `app/agents/graph.py` | LangGraph state machine orchestration (async) |
 | Embeddings | `app/rag/embeddings.py` | Sentence Transformers (CPU) |
-| Vector Store | `app/rag/vectorstore.py` | ChromaDB persistent client |
+| Vector Store | `app/rag/vectorstore.py` | ChromaDB client, `RetrievedChunk` domain type |
 | Ingestion | `app/rag/ingest.py` | Loads MD docs → chunks → embeds → stores |
 | Config | `app/config.py` | pydantic-settings, reads `.env` |
 | Models | `app/models.py` | Pydantic request/response schemas |
@@ -29,7 +29,7 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 1. **Ticket arrives** via POST `/api/v1/tickets`
 2. **Triage**: LLM classifies into category (IT_SUPPORT, HR_POLICY, EXPENSE, ONBOARDING, GENERAL) with confidence score
 3. **Gate**: If confidence < 0.5 → escalate to human, skip resolution
-4. **Retrieval**: LLM optimizes search query → ChromaDB similarity search (top 5 chunks)
+4. **Retrieval**: LLM optimizes search query → ChromaDB similarity search returns `RetrievedChunk` objects (top 5 chunks)
 5. **Resolution**: LLM generates response with inline citations from retrieved docs
 6. **Response**: Returns category, confidence, summary, resolution, sources, processing time
 
