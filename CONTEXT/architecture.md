@@ -18,9 +18,9 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 | Retrieval | `app/agents/retrieval.py` | Optimizes query, searches ChromaDB (async) |
 | Resolution | `app/agents/resolution.py` | Generates citation-backed response (async) |
 | Graph | `app/agents/graph.py` | LangGraph state machine orchestration (async) |
-| Embeddings | `app/rag/embeddings.py` | Sentence Transformers (CPU) |
-| Vector Store | `app/rag/vectorstore.py` | ChromaDB client, `RetrievedChunk` domain type |
-| Ingestion | `app/rag/ingest.py` | Loads MD docs → chunks → embeds → stores |
+| Embeddings | `app/rag/embeddings.py` | Sentence Transformers (CPU, singleton cached) |
+| Vector Store | `app/rag/vectorstore.py` | ChromaDB client, `RetrievedChunk` domain type (singleton cached) |
+| Ingestion | `app/rag/ingest.py` | Loads MD docs → chunks → embeds → stores (idempotent) |
 | Config | `app/config.py` | pydantic-settings, reads `.env` |
 | Models | `app/models.py` | Pydantic request/response schemas |
 

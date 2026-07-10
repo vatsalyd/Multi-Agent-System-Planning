@@ -11,7 +11,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from app.config import settings
-from app.rag.vectorstore import get_vectorstore
+from app.rag.vectorstore import get_vectorstore, clear_collection
 
 logging.basicConfig(level=settings.log_level)
 logger = logging.getLogger(__name__)
@@ -47,8 +47,8 @@ def load_documents() -> list:
 
 def split_documents(documents: list) -> list:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50,
+        chunk_size=settings.chunk_size,
+        chunk_overlap=settings.chunk_overlap,
         length_function=len,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
@@ -68,6 +68,9 @@ def ingest():
     logger.info(f"Loaded {len(documents)} documents")
 
     chunks = split_documents(documents)
+
+    logger.info("Clearing existing collection for idempotent re-ingestion...")
+    clear_collection()
 
     logger.info("Embedding and storing chunks in ChromaDB...")
     vectorstore = get_vectorstore()

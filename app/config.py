@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./chroma_data"
     chroma_collection_name: str = "company_knowledge"
 
+    chunk_size: int = 500
+    chunk_overlap: int = 50
+
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "INFO"

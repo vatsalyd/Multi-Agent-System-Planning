@@ -48,6 +48,6 @@
 
 ## Known Complexity
 - `app/agents/graph.py` — LangGraph state machine with conditional routing; understand `AgentState` TypedDict before modifying
-- `app/rag/ingest.py` — knowledge base ingestion runs as standalone script (`python -m app.rag.ingest`), not part of API startup
+- `app/rag/ingest.py` — knowledge base ingestion is idempotent (clears before re-add), runs as standalone script (`python -m app.rag.ingest`)
 - Triage JSON parsing — LLM sometimes wraps output in markdown code fences; stripping logic is fragile
 - Resolution agent response format uses `RESOLUTION:` and `SOURCES:` markers — changing prompt format breaks response parsing
