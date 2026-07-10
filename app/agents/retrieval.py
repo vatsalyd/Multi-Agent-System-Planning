@@ -7,7 +7,7 @@ import logging
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.llm.provider import create_llm
-from app.rag.vectorstore import similarity_search
+from app.rag.vectorstore import similarity_search, RetrievedChunk
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ Rules:
 - Respond with ONLY the optimized search query, nothing else"""
 
 
-async def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list:
+async def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list[RetrievedChunk]:
     """Optimize the search query via LLM, then retrieve relevant docs from ChromaDB."""
     logger.info(f"Retrieving documents for category: {category}")
 
@@ -40,14 +40,7 @@ async def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> lis
     optimized_query = response.content.strip()
     logger.info(f"Optimized search query: {optimized_query}")
 
-    docs = similarity_search(optimized_query, k=k)
-
-    results = []
-    for doc in docs:
-        results.append({
-            "content": doc.page_content,
-            "source": doc.metadata.get("source", "unknown"),
-        })
+    results = similarity_search(optimized_query, k=k)
 
     logger.info(f"Retrieved {len(results)} document chunks")
     return results

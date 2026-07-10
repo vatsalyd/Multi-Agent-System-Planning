@@ -11,6 +11,7 @@ from unittest.mock import patch, AsyncMock, MagicMock
 import pytest
 
 from app.agents.resolution import generate_resolution
+from app.rag.vectorstore import RetrievedChunk
 
 
 # ── Tests ───────────────────────────────────────────────────
@@ -37,14 +38,14 @@ class TestResolutionAgent:
         mock_factory.return_value = mock_instance
 
         docs = [
-            {
-                "content": "Visit the IT Self-Service Portal for password reset.",
-                "source": "vpn_setup_guide.md",
-            },
-            {
-                "content": "Passwords expire every 90 days.",
-                "source": "password_reset_policy.md",
-            },
+            RetrievedChunk(
+                content="Visit the IT Self-Service Portal for password reset.",
+                source="vpn_setup_guide.md",
+            ),
+            RetrievedChunk(
+                content="Passwords expire every 90 days.",
+                source="password_reset_policy.md",
+            ),
         ]
 
         result = await generate_resolution(
@@ -90,8 +91,8 @@ class TestResolutionAgent:
         mock_factory.return_value = mock_instance
 
         docs = [
-            {"content": "Chunk 1", "source": "leave_policy.md"},
-            {"content": "Chunk 2", "source": "leave_policy.md"},
+            RetrievedChunk(content="Chunk 1", source="leave_policy.md"),
+            RetrievedChunk(content="Chunk 2", source="leave_policy.md"),
         ]
 
         result = await generate_resolution(
