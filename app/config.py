@@ -14,6 +14,8 @@ class Settings(BaseSettings):
 
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
+    groq_request_timeout: int = 30
+    groq_max_retries: int = 2
 
     embedding_model: str = "all-MiniLM-L6-v2"
 

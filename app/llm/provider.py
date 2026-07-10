@@ -12,4 +12,6 @@ def create_llm(temperature: float = 0.0) -> ChatGroq:
         model=settings.groq_model,
         groq_api_key=settings.groq_api_key,
         temperature=temperature,
+        request_timeout=settings.groq_request_timeout,
+        max_retries=settings.groq_max_retries,
     )

@@ -21,7 +21,7 @@
 - Agent pipeline: `app/agents/` (triage → retrieval → resolution → graph orchestrator)
 - RAG pipeline: `app/rag/` (embeddings, vectorstore, ingest)
 - Knowledge base docs: `app/data/knowledge_base/*.md`
-- Config: `app/config.py` (reads from `.env`)
+- Config: `app/config.py` (reads from `.env`, LLM timeout/retries configurable)
 - Models/schemas: `app/models.py`
 - Tests: `tests/`
 - CI/CD: `.github/workflows/deploy.yml`

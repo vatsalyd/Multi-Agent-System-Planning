@@ -13,7 +13,7 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | FastAPI | `app/main.py` | REST API entry point (async handlers) |
-| LLM Provider | `app/llm/provider.py` | Single factory for LLM instantiation |
+| LLM Provider | `app/llm/provider.py` | Single factory, configurable timeout + retries |
 | Triage | `app/agents/triage.py` | Classifies ticket category + confidence (async) |
 | Retrieval | `app/agents/retrieval.py` | Optimizes query, searches ChromaDB (async) |
 | Resolution | `app/agents/resolution.py` | Generates citation-backed response (async) |
