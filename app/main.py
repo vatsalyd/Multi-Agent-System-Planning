@@ -2,15 +2,15 @@
 FastAPI application — REST API for the multi-agent triage system.
 """
 
-import logging
 import time
 import uuid
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from app.config import settings
+from app.logging_config import setup_logging, get_logger, correlation_id
 from app.models import (
     TicketRequest,
     TriageResult,
@@ -21,11 +21,8 @@ from app.models import (
 from app.agents.triage import triage_ticket
 from app.agents.graph import process_ticket
 
-logging.basicConfig(
-    level=settings.log_level,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-)
-logger = logging.getLogger(__name__)
+setup_logging(settings.log_level)
+logger = get_logger(__name__)
 
 app = FastAPI(
     title=settings.app_name,
@@ -49,6 +46,17 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def add_correlation_id(request: Request, call_next):
+    """Propagate correlation ID from header or generate one."""
+    cid = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+    token = correlation_id.set(cid)
+    response = await call_next(request)
+    response.headers["X-Correlation-ID"] = cid
+    correlation_id.reset(token)
+    return response
+
+
 @app.get("/", include_in_schema=False)
 async def root():
     return RedirectResponse(url="/api/v1/docs")
@@ -70,8 +78,28 @@ async def liveness():
     summary="Health Check",
 )
 async def health_check():
+    """Verify Groq API key is set and ChromaDB is reachable."""
+    checks = {}
+
+    # Groq API key check
+    if settings.groq_api_key:
+        checks["groq_api_key"] = "configured"
+    else:
+        checks["groq_api_key"] = "missing"
+
+    # ChromaDB check
+    try:
+        from app.rag.vectorstore import get_vectorstore
+        store = get_vectorstore()
+        store._collection.count()  # lightweight probe
+        checks["chromadb"] = "reachable"
+    except Exception as e:
+        checks["chromadb"] = f"error: {e}"
+
+    overall = "healthy" if all(v == "configured" or v == "reachable" for v in checks.values()) else "degraded"
+
     return HealthResponse(
-        status="healthy",
+        status=overall,
         version=settings.app_version,
         service=settings.app_name,
     )
@@ -87,14 +115,22 @@ async def health_check():
 async def submit_ticket(request: TicketRequest):
     """Process a ticket through the full agent pipeline: Triage → Retrieval → Resolution."""
     logger.info(
-        f"Received ticket from source: {request.source} — "
-        f"{request.ticket_text[:80]}..."
+        "Received ticket from source: %s — %s...",
+        request.source,
+        request.ticket_text[:80],
     )
 
     try:
         result = await process_ticket(
             ticket_text=request.ticket_text,
             source=request.source,
+        )
+
+        logger.info(
+            "Ticket processed: category=%s confidence=%.2f time_ms=%d",
+            result["category"],
+            result["confidence"],
+            result["processing_time_ms"],
         )
 
         return ResolutionResponse(
@@ -109,7 +145,7 @@ async def submit_ticket(request: TicketRequest):
         )
 
     except Exception as e:
-        logger.error(f"Failed to process ticket: {e}", exc_info=True)
+        logger.error("Failed to process ticket: %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to process ticket: {str(e)}",
@@ -125,7 +161,7 @@ async def submit_ticket(request: TicketRequest):
 )
 async def triage_only(request: TicketRequest):
     """Classify a ticket without running the full pipeline."""
-    logger.info(f"Triage-only request: {request.ticket_text[:80]}...")
+    logger.info("Triage-only request: %s...", request.ticket_text[:80])
 
     try:
         result = await triage_ticket(request.ticket_text)
@@ -140,7 +176,7 @@ async def triage_only(request: TicketRequest):
         )
 
     except Exception as e:
-        logger.error(f"Failed to triage ticket: {e}", exc_info=True)
+        logger.error("Failed to triage ticket: %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to triage ticket: {str(e)}",
@@ -150,8 +186,11 @@ async def triage_only(request: TicketRequest):
 @app.on_event("startup")
 async def startup_event():
     logger.info(
-        f"{settings.app_name} v{settings.app_version} started "
-        f"on {settings.host}:{settings.port}"
+        "%s v%s started on %s:%s",
+        settings.app_name,
+        settings.app_version,
+        settings.host,
+        settings.port,
     )
     if not settings.groq_api_key:
         logger.warning("GROQ_API_KEY is not set! API calls to agents will fail.")

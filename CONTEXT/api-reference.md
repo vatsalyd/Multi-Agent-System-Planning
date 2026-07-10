@@ -42,3 +42,7 @@
 - `resolved` → full pipeline complete
 - `escalated` → low confidence, human review
 - `error` / `retrieval_error` / `resolution_error` → failures
+
+## Headers
+
+- **X-Correlation-ID**: Propagated from request or auto-generated. Returned in response header. Included in all structured log entries.

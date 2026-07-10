@@ -22,6 +22,7 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 | Vector Store | `app/rag/vectorstore.py` | ChromaDB client, `RetrievedChunk` domain type (singleton cached) |
 | Ingestion | `app/rag/ingest.py` | Loads MD docs → chunks → embeds → stores (idempotent) |
 | Config | `app/config.py` | pydantic-settings, reads `.env` |
+| Logging | `app/logging_config.py` | Structured JSON, correlation ID via `X-Correlation-ID` header |
 | Models | `app/models.py` | Pydantic request/response schemas |
 
 ## Data Flow
