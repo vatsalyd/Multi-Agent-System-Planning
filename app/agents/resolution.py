@@ -4,10 +4,9 @@ Resolution Agent — generates citation-backed response drafts using Groq.
 
 import logging
 
-from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from app.config import settings
+from app.llm.provider import create_llm
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +35,7 @@ SOURCES:
 Keep the resolution concise but thorough (150-300 words)."""
 
 
-def create_resolution_agent() -> ChatGroq:
-    return ChatGroq(
-        model=settings.groq_model,
-        groq_api_key=settings.groq_api_key,
-        temperature=0.3,
-    )
-
-
-def generate_resolution(
+async def generate_resolution(
     ticket_text: str,
     category: str,
     retrieved_docs: list,
@@ -60,7 +51,7 @@ def generate_resolution(
         docs_text += "\n"
         sources.add(doc["source"])
 
-    llm = create_resolution_agent()
+    llm = create_llm(temperature=0.3)
 
     messages = [
         SystemMessage(content=RESOLUTION_SYSTEM_PROMPT),
@@ -74,7 +65,7 @@ def generate_resolution(
         ),
     ]
 
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
     resolution_text = response.content.strip()
 
     logger.info("Resolution generated successfully")

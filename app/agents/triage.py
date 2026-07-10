@@ -5,10 +5,9 @@ Triage Agent — classifies tickets using Groq (LLaMA 3.3 70B).
 import json
 import logging
 
-from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from app.config import settings
+from app.llm.provider import create_llm
 
 logger = logging.getLogger(__name__)
 
@@ -43,25 +42,17 @@ Rules:
 - Respond ONLY with the JSON object, no additional text"""
 
 
-def create_triage_agent() -> ChatGroq:
-    return ChatGroq(
-        model=settings.groq_model,
-        groq_api_key=settings.groq_api_key,
-        temperature=0.0,
-    )
-
-
-def triage_ticket(ticket_text: str) -> dict:
+async def triage_ticket(ticket_text: str) -> dict:
     """Classify an incoming ticket into a category."""
     logger.info(f"Triaging ticket: {ticket_text[:100]}...")
 
-    llm = create_triage_agent()
+    llm = create_llm(temperature=0.0)
     messages = [
         SystemMessage(content=TRIAGE_SYSTEM_PROMPT),
         HumanMessage(content=f"Classify this ticket:\n\n{ticket_text}"),
     ]
 
-    response = llm.invoke(messages)
+    response = await llm.ainvoke(messages)
 
     # Strip markdown code fences if model wraps JSON in ```json ... ```
     raw = response.content.strip()

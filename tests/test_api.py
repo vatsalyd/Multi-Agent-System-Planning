@@ -76,7 +76,7 @@ class TestTicketEndpoint:
             "/api/v1/tickets",
             json={"ticket_text": ""},
         )
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 422
 
     def test_rejects_too_short_ticket(self):
         """Ticket with text shorter than 10 chars should be rejected."""
@@ -119,7 +119,7 @@ class TestTriageEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["category"] == "HR_POLICY"
-        assert "resolution" not in data  # Triage only, no resolution
+        assert "resolution" not in data
         assert "ticket_id" in data
 
     @patch("app.main.triage_ticket")
