@@ -1,9 +1,9 @@
 # Deploy Specification
 
-*Version: 1.0 | Last updated: 2026-07-11*
+*Version: 2.0 | Last updated: 2026-07-20*
 
 ## Purpose
-Deploy HelixDesk to production via GitHub Actions CI/CD pipeline: push to main → test → build Docker image → push to ECR → deploy to EC2.
+Deploy HelixDesk to production via GitHub Actions CI/CD pipeline: push to main → test → deploy to Fly.io (Pinecone is managed cloud, no deployment needed).
 
 ## Trigger
 - Push to `main` branch
@@ -12,52 +12,66 @@ Deploy HelixDesk to production via GitHub Actions CI/CD pipeline: push to main �
 ## Inputs Required
 - All GitHub Secrets configured (see below)
 - Code on `main` branch with passing tests
+- Fly.io app created (`fly launch` once)
+- Pinecone index exists (created automatically on first app startup)
 
 ## Output Definition
-- Format: Running Docker container on EC2
-- Quality bar: Health check returns 200, API docs accessible at `http://[EC2_IP]:8000/api/v1/docs`
-- Destination: AWS EC2 instance
+- Format: Running Fly.io Machine in `iad` region
+- Quality bar: Health check returns 200, API docs accessible at `https://helixdesk.fly.dev/api/v1/docs`
+- Destination: Fly.io free tier (shared-cpu-1x, 256MB RAM, auto-stop on idle)
 
 ## Step-by-Step Process
 1. Push code to `main` branch
 2. GitHub Actions runs tests (`pytest tests/ -v`)
-3. On test pass: build Docker image with commit SHA tag
-4. Push image to ECR repository
-5. SSH into EC2, pull new image, stop old container, start new one
-6. Wait 10s for startup, then health check
+3. On test pass: `flyctl deploy --remote-only` builds Docker image on Fly.io builders and deploys
+4. Fly.io starts Machine, health check verifies `/api/v1/health`
+5. App scales to zero when idle, cold-starts on first request (~3-8s)
 
 ## Required GitHub Secrets
 | Secret | Description |
 |--------|-------------|
-| `AWS_ACCESS_KEY_ID` | IAM credentials for ECR |
-| `AWS_SECRET_ACCESS_KEY` | IAM credentials for ECR |
-| `AWS_REGION` | e.g., us-east-1 |
-| `ECR_REPOSITORY` | ECR repo name (e.g., multi-agent-triage) |
-| `EC2_HOST` | EC2 Elastic IP |
-| `EC2_USER` | SSH user (e.g., ec2-user) |
-| `EC2_SSH_KEY` | Private key (.pem contents) |
+| `FLY_API_TOKEN` | Fly.io API token (from `fly tokens create`) |
+
+## Required Fly.io App Secrets (set via `fly secrets set`)
+| Secret | Description |
+|--------|-------------|
 | `GROQ_API_KEY` | Groq API key for LLM inference |
+| `PINECONE_API_KEY` | Pinecone API key for vector database |
 
 ## Quality Checklist
-- [ ] Tests pass before build
-- [ ] Docker image builds successfully
-- [ ] Image pushed to ECR with SHA tag + latest
-- [ ] EC2 pulls new image
-- [ ] Old container stopped and removed
-- [ ] Health check returns 200
+- [ ] Tests pass before deploy
+- [ ] Fly.io deploy succeeds
+- [ ] Health check returns 200 with `pinecone: "reachable"`
 - [ ] Swagger UI accessible at `/api/v1/docs`
+- [ ] Ticket submission works end-to-end
 
 ## Approval Gates
 None — automated on push to main.
 
 ## Error Handling
-- Test failure → build/deploy skipped, check GitHub Actions logs
-- ECR push failure → check AWS credentials and ECR repo existence
-- EC2 SSH failure → check EC2 host, user, and SSH key
-- Health check failure → container may need more startup time (model loading ~60s)
+- Test failure → deploy skipped, check GitHub Actions logs
+- Fly.io deploy failure → check `flyctl` logs, verify secrets are set
+- Health check failure → Pinecone API key may be invalid, or index not yet created (first deploy creates index)
+- Cold start timeout → increase `start_period` in health check if needed
 
 ## Common Failure Modes
-- AWS credentials expired → rotate IAM keys
-- EC2 instance stopped → start instance first
-- Docker image too large → multi-stage build keeps it lean (~500MB)
-- ChromaDB data lost → EC2 uses named volume `multi-agent-chroma`
+- Fly.io token expired → regenerate with `fly tokens create`
+- Pinecone API key invalid → verify in Pinecone console, update via `fly secrets set`
+- Pinecone index dimension mismatch → must be 384 for `all-MiniLM-L6-v2`
+- Fly.io free tier limits exceeded → scale to paid plan or wait for reset
+
+## Local Development
+```bash
+# Start with Docker Compose
+docker-compose up --build
+
+# Run ingestion (requires PINECONE_API_KEY in .env)
+python -m app.rag.ingest
+```
+
+## Manual Deploy (if needed)
+```bash
+flyctl deploy --remote-only
+flyctl logs  # tail logs
+flyctl status  # check app status
+```

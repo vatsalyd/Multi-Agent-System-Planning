@@ -1,5 +1,5 @@
 """
-Knowledge base ingestion — loads markdown docs, chunks them, and stores in ChromaDB.
+Knowledge base ingestion — loads markdown docs, chunks them, and stores in Pinecone.
 Usage: python -m app.rag.ingest
 """
 
@@ -69,17 +69,17 @@ def ingest():
 
     chunks = split_documents(documents)
 
-    logger.info("Clearing existing collection for idempotent re-ingestion...")
+    logger.info("Clearing existing index for idempotent re-ingestion...")
     clear_collection()
 
-    logger.info("Embedding and storing chunks in ChromaDB...")
+    logger.info("Embedding and storing chunks in Pinecone...")
     vectorstore = get_vectorstore()
     vectorstore.add_documents(chunks)
 
     logger.info(
         f"Ingestion complete! "
-        f"Stored {len(chunks)} chunks in collection "
-        f"'{settings.chroma_collection_name}'"
+        f"Stored {len(chunks)} chunks in index "
+        f"'{settings.pinecone_index_name}'"
     )
 
 

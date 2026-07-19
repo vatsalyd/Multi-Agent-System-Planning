@@ -15,11 +15,11 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 | FastAPI | `app/main.py` | REST API entry point (async handlers) |
 | LLM Provider | `app/llm/provider.py` | Single factory, configurable timeout + retries |
 | Triage | `app/agents/triage.py` | Classifies ticket category + confidence (async) |
-| Retrieval | `app/agents/retrieval.py` | Optimizes query, searches ChromaDB (async) |
+| Retrieval | `app/agents/retrieval.py` | Optimizes query, searches Pinecone (async) |
 | Resolution | `app/agents/resolution.py` | Generates citation-backed response (async) |
 | Graph | `app/agents/graph.py` | LangGraph state machine orchestration (async) |
 | Embeddings | `app/rag/embeddings.py` | Sentence Transformers (CPU, singleton cached) |
-| Vector Store | `app/rag/vectorstore.py` | ChromaDB client, `RetrievedChunk` domain type (singleton cached) |
+| Vector Store | `app/rag/vectorstore.py` | Pinecone client, `RetrievedChunk` domain type (singleton cached) |
 | Ingestion | `app/rag/ingest.py` | Loads MD docs → chunks → embeds → stores (idempotent) |
 | Config | `app/config.py` | pydantic-settings, reads `.env` |
 | Logging | `app/logging_config.py` | Structured JSON, correlation ID via `X-Correlation-ID` header |
@@ -30,7 +30,7 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 1. **Ticket arrives** via POST `/api/v1/tickets`
 2. **Triage**: LLM classifies into category (IT_SUPPORT, HR_POLICY, EXPENSE, ONBOARDING, GENERAL) with confidence score
 3. **Gate**: If confidence < 0.5 → escalate to human, skip resolution
-4. **Retrieval**: LLM optimizes search query → ChromaDB similarity search returns `RetrievedChunk` objects (top 5 chunks)
+4. **Retrieval**: LLM optimizes search query → Pinecone similarity search returns `RetrievedChunk` objects (top 5 chunks)
 5. **Resolution**: LLM generates response with inline citations from retrieved docs
 6. **Response**: Returns category, confidence, summary, resolution, sources, processing time
 

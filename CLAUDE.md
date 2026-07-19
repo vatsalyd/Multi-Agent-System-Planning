@@ -3,8 +3,8 @@
 ## Stack
 - Python 3.12, FastAPI, LangGraph, LangChain
 - Groq LLM: llama-3.3-70b-versatile (free tier)
-- ChromaDB (local persistent), Sentence Transformers all-MiniLM-L6-v2 (CPU)
-- Docker → AWS ECR → EC2, GitHub Actions CI/CD
+- Pinecone (serverless, free tier), Sentence Transformers all-MiniLM-L6-v2 (CPU)
+- Docker → Fly.io, GitHub Actions CI/CD
 
 ## Corrections
 - LLM factory is `app/llm/provider.py:create_llm()` — do not import `ChatGroq` directly in agent files
@@ -28,8 +28,8 @@
 
 ## Tools & Integrations
 - Groq API: requires `GROQ_API_KEY` in `.env`
-- ChromaDB: persistent at `./chroma_data/`, collection `company_knowledge`
-- AWS: ECR for images, EC2 for deployment (secrets in GitHub Actions)
+- Pinecone: requires `PINECONE_API_KEY` in `.env`, index `helixdesk` in `us-east-1` (AWS)
+- Fly.io: deploys Docker image, scales to zero when idle
 
 ## Never Do Without Asking
 - Change the confidence threshold (0.5 in `app/agents/graph.py`)

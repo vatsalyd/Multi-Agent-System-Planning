@@ -16,11 +16,8 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY app/ ./app/
 
-RUN mkdir -p /app/chroma_data
-
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV CHROMA_PERSIST_DIR=/app/chroma_data
 
 EXPOSE 8000
 

@@ -41,14 +41,15 @@ async def lifespan(app: FastAPI):
             "GROQ_API_KEY is not set! API calls to agents will fail."
         )
 
-    # ChromaDB connectivity check (fail fast)
+    # Pinecone connectivity check (fail fast)
     try:
-        from app.rag.vectorstore import get_vectorstore
-        store = get_vectorstore()
-        store._collection.count()
-        logger.info("ChromaDB connectivity verified")
+        from app.rag.vectorstore import get_pinecone_client
+        pc = get_pinecone_client()
+        index = pc.Index(settings.pinecone_index_name)
+        index.describe_index_stats()
+        logger.info("Pinecone connectivity verified")
     except Exception as e:
-        logger.error("ChromaDB connectivity check failed: %s", e)
+        logger.error("Pinecone connectivity check failed: %s", e)
         # Don't raise — let health endpoint report degraded
         # raise RuntimeError(f"ChromaDB unreachable: {e}") from e
 
@@ -113,7 +114,7 @@ async def liveness():
     summary="Health Check",
 )
 async def health_check():
-    """Verify Groq API key is set and ChromaDB is reachable."""
+    """Verify Groq API key is set and Pinecone is reachable."""
     checks = {}
 
     # Groq API key check
@@ -124,12 +125,13 @@ async def health_check():
 
     # ChromaDB check
     try:
-        from app.rag.vectorstore import get_vectorstore
-        store = get_vectorstore()
-        store._collection.count()  # lightweight probe
-        checks["chromadb"] = "reachable"
+        from app.rag.vectorstore import get_pinecone_client
+        pc = get_pinecone_client()
+        index = pc.Index(settings.pinecone_index_name)
+        index.describe_index_stats()
+        checks["pinecone"] = "reachable"
     except Exception as e:
-        checks["chromadb"] = f"error: {e}"
+        checks["pinecone"] = f"error: {e}"
 
     overall = (
         "healthy"

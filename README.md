@@ -1,4 +1,4 @@
-# � HelixDesk — AI-Powered Enterprise Support Intelligence
+# 🚀 HelixDesk — AI-Powered Enterprise Support Intelligence
 
 <div align="center">
 
@@ -55,11 +55,11 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 | Component | Technology | Details |
 |-----------|-----------|---------|
 | **LLM** | [Groq](https://groq.com/) | `llama-3.3-70b-versatile` — free, fast inference via Groq Cloud |
-| **Embeddings** | [Sentence Transformers](https://www.sbert.net/) | `all-MiniLM-L6-v2` 
-| **Vector Database** | [ChromaDB](https://www.trychroma.com/) | Local persistent storage for document embeddings |
+| **Embeddings** | [Sentence Transformers](https://www.sbert.net/) | `all-MiniLM-L6-v2` — local, CPU-only, no API key needed |
+| **Vector Database** | [Pinecone](https://www.pinecone.io/) | Serverless vector DB (free tier: 2GB, 1M reads/mo) |
 | **Orchestration** | [LangGraph](https://github.com/langchain-ai/langgraph) | State machine for multi-agent coordination and routing |
 | **API Framework** | [FastAPI](https://fastapi.tiangolo.com/) | Async REST API with Pydantic validation and auto-generated docs |
-| **Deployment** | Docker → AWS ECR → AWS EC2 | Containerized deployments with CI/CD via GitHub Actions |
+| **Deployment** | Docker → Fly.io | Containerized deployments with CI/CD via GitHub Actions |
 
 ---
 
@@ -83,6 +83,7 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 #### Prerequisites
 - Python 3.12+
 - A free [Groq API key](https://console.groq.com/)
+- A free [Pinecone API key](https://app.pinecone.io/)
 
 #### Setup
 
@@ -100,13 +101,14 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Configure environment
-# copy .env .env  # (or create .env manually — see Environment Variables below)
+cp .env.example .env
 ```
 
-Edit `.env` and add your Groq API key:
+Edit `.env` and add your API keys:
 
 ```env
 GROQ_API_KEY=gsk_your_key_here
+PINECONE_API_KEY=pcsk_your_key_here
 ```
 
 ### Environment Variables
@@ -118,8 +120,10 @@ GROQ_API_KEY=gsk_your_key_here
 | `GROQ_REQUEST_TIMEOUT` | No | `30` | LLM request timeout (seconds) |
 | `GROQ_MAX_RETRIES` | No | `2` | Max retries for transient LLM failures |
 | `EMBEDDING_MODEL` | No | `all-MiniLM-L6-v2` | Sentence Transformers model |
-| `CHROMA_PERSIST_DIR` | No | `./chroma_data` | ChromaDB persistence directory |
-| `CHROMA_COLLECTION_NAME` | No | `company_knowledge` | ChromaDB collection name |
+| `PINECONE_API_KEY` | Yes | — | Pinecone API key for vector database |
+| `PINECONE_INDEX_NAME` | No | `helixdesk` | Pinecone index name |
+| `PINECONE_CLOUD` | No | `aws` | Pinecone cloud provider |
+| `PINECONE_REGION` | No | `us-east-1` | Pinecone region (must match index) |
 | `CHUNK_SIZE` | No | `500` | Document chunk size for ingestion |
 | `CHUNK_OVERLAP` | No | `50` | Chunk overlap for ingestion |
 | `HOST` | No | `0.0.0.0` | Server host |
@@ -134,7 +138,7 @@ HelixDesk includes production-ready observability features:
 
 - **Structured JSON Logging** — All API requests and agent operations emit structured JSON logs via `app/logging_config.py`, making logs queryable in ELK, Datadog, CloudWatch, etc.
 - **Correlation IDs** — Every request accepts or generates an `X-Correlation-ID` header that propagates through the entire agent pipeline (Triage → Retrieval → Resolution) and appears in all log entries for that request.
-- **Health Checks** — `/api/v1/health` verifies Groq API key configuration and ChromaDB connectivity; `/healthz` provides a lightweight liveness probe.
+- **Health Checks** — `/api/v1/health` verifies Groq API key configuration and Pinecone connectivity; `/healthz` provides a lightweight liveness probe.
 - **Configurable Timeouts & Retries** — LLM request timeout and max retries are configurable via `GROQ_REQUEST_TIMEOUT` and `GROQ_MAX_RETRIES`.
 
 ---
@@ -168,13 +172,13 @@ docker run -p 8000:8000 --env-file .env helixdesk
 
 ---
 
-### Option 3 — Deployed Service (AWS EC2)
+### Option 3 — Deployed Service (Fly.io)
 
-HelixDesk is deployed on AWS EC2 and accessible at:
+HelixDesk is deployed on Fly.io and accessible at:
 
 ```
-http://44.214.206.48:8000/api/v1/docs    # Swagger UI
-http://44.214.206.48:8000/healthz         # Health Check
+https://helixdesk.fly.dev/api/v1/docs    # Swagger UI
+https://helixdesk.fly.dev/healthz         # Health Check
 ```
 
 
@@ -230,21 +234,18 @@ All tests use mocked LLM calls — **no API key or network required**.
 The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`:
 
 ```
-Push to main → Run Tests → Build & Push to ECR → SSH Deploy to EC2
+Push to main → Run Tests → Deploy to Fly.io
 ```
 
 ### Required GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
-| `AWS_ACCESS_KEY_ID` | IAM credentials for ECR access |
-| `AWS_SECRET_ACCESS_KEY` | IAM credentials for ECR access |
-| `AWS_REGION` | AWS region (e.g., `us-east-1`) |
-| `ECR_REPOSITORY` | ECR repository name |
-| `EC2_HOST` | EC2 Elastic IP address |
-| `EC2_USER` | EC2 SSH user (e.g., `ec2-user`) |
-| `EC2_SSH_KEY` | EC2 private key (`.pem` contents) |
-| `GROQ_API_KEY` | Groq API key for LLM inference |
+| `FLY_API_TOKEN` | Fly.io API token (from `fly tokens create`) |
+
+Fly.io app secrets (set via `fly secrets set`):
+- `GROQ_API_KEY` — Groq API key for LLM inference
+- `PINECONE_API_KEY` — Pinecone API key for vector database
 
 ---
 
@@ -265,13 +266,15 @@ Push to main → Run Tests → Build & Push to ECR → SSH Deploy to EC2
 │   │   └── provider.py      # LLM factory (single source of truth)
 │   ├── rag/
 │   │   ├── embeddings.py    # Sentence Transformers embedding wrapper
-│   │   ├── vectorstore.py   # ChromaDB client & query interface
+│   │   ├── vectorstore.py   # Pinecone client & query interface
 │   │   └── ingest.py        # Knowledge base ingestion script
 │   └── data/knowledge_base/ # Company policy documents (Markdown)
 ├── tests/                   # Unit & integration tests (mocked)
 ├── Dockerfile               # Multi-stage production build
 ├── docker-compose.yml       # Local development setup
-└── .github/workflows/       # CI/CD pipeline
+├── fly.toml                 # Fly.io app configuration
+├── .github/workflows/       # CI/CD pipeline
+└── .env.example             # Environment variable template
 ```
 
 ---

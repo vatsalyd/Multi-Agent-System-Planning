@@ -1,12 +1,12 @@
 """
-ChromaDB vector store — persistent local storage for document embeddings.
+Pinecone vector store — cloud vector database for document embeddings.
 """
 
 import functools
 from dataclasses import dataclass
 
-import chromadb
-from langchain_chroma import Chroma
+from pinecone import Pinecone, ServerlessSpec
+from langchain_pinecone import PineconeVectorStore
 
 from app.config import settings
 from app.rag.embeddings import get_embeddings
@@ -20,20 +20,41 @@ class RetrievedChunk:
 
 
 @functools.lru_cache(maxsize=1)
-def get_vectorstore() -> Chroma:
-    client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
-    return Chroma(
-        client=client,
-        collection_name=settings.chroma_collection_name,
-        embedding_function=get_embeddings(),
+def get_pinecone_client() -> Pinecone:
+    """Get or create Pinecone client (singleton)."""
+    return Pinecone(api_key=settings.pinecone_api_key)
+
+
+def _ensure_index_exists(pc: Pinecone) -> None:
+    """Create Pinecone index if it doesn't exist (idempotent)."""
+    if settings.pinecone_index_name not in pc.list_indexes().names():
+        pc.create_index(
+            name=settings.pinecone_index_name,
+            dimension=settings.pinecone_dimension,
+            metric="cosine",
+            spec=ServerlessSpec(
+                cloud=settings.pinecone_cloud,
+                region=settings.pinecone_region,
+            ),
+        )
+
+
+@functools.lru_cache(maxsize=1)
+def get_vectorstore() -> PineconeVectorStore:
+    pc = get_pinecone_client()
+    _ensure_index_exists(pc)
+    index = pc.Index(settings.pinecone_index_name)
+    return PineconeVectorStore(
+        index=index,
+        embedding=get_embeddings(),
     )
 
 
 def clear_collection():
-    """Delete all documents from the collection. Called before re-ingestion."""
-    store = get_vectorstore()
-    store.delete_collection()
-    # Reset cache so next get_vectorstore() creates a fresh client
+    """Delete all vectors from the index. Called before re-ingestion."""
+    pc = get_pinecone_client()
+    index = pc.Index(settings.pinecone_index_name)
+    index.delete(delete_all=True, namespace="")
     get_vectorstore.cache_clear()
 
 

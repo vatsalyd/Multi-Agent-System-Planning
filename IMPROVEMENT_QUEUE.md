@@ -26,3 +26,26 @@
 | # | Candidate | Reason |
 |---|-----------|--------|
 | 1 | Prompt versioning | Not yet needed — prompts are stable, no A/B testing in scope |
+
+---
+
+### Completed: Deployment Migration
+
+| Task | Status | Details |
+|------|--------|---------|
+| AWS ECR → Fly.io | ✅ Done | Removed AWS CI/CD, added Fly.io deploy workflow |
+| ChromaDB → Pinecone | ✅ Done | Replaced local vector DB with Pinecone serverless (free tier) |
+| Docker volume removed | ✅ Done | No persistent volume needed; Pinecone handles storage |
+| CI/CD pipeline | ✅ Done | `.github/workflows/deploy.yml` uses `flyctl deploy --remote-only` |
+| Fly.io config | ✅ Done | `fly.toml` with auto-stop/start, iad region |
+| Environment template | ✅ Done | `.env.example` with Pinecone vars |
+
+### New Architecture
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Vector DB | ChromaDB (local, persistent volume) | Pinecone (serverless, cloud) |
+| Deployment | Docker → ECR → EC2 (SSH) | Docker → Fly.io (GitHub Actions) |
+| Persistent Storage | EC2 named volume | None (Pinecone managed) |
+| Region | us-east-1 (EC2) | iad (Fly.io) + us-east-1 (Pinecone) |
+| Free Tier | No (AWS costs) | Yes (Fly.io + Pinecone Starter) |
