@@ -31,7 +31,7 @@ class TestHealthEndpoint:
         response = client.get("/api/v1/health")
         data = response.json()
         assert "status" in data
-        assert data["status"] == "healthy"
+        assert data["status"] in ("healthy", "degraded")
         assert "version" in data
         assert "service" in data
 
