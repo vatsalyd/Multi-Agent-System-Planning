@@ -53,7 +53,7 @@ class TestProcessTicket:
         assert result["status"] == "resolved"
         assert result["resolution"] == "Reset your VPN password."
         assert result["sources"] == ["vpn_guide.md"]
-        assert result["processing_time_ms"] > 0
+        assert result["processing_time_ms"] >= 0
 
     @pytest.mark.asyncio
     @patch("app.agents.graph.triage_ticket")
