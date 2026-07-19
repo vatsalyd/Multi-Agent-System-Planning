@@ -11,7 +11,7 @@
 | 5 | Observability | merged to main | logging_config.py (new), main.py, requirements.txt | Structured JSON logs, `X-Correlation-ID`, health check probes |
 | 7 | API resilience | merged to main | provider.py, config.py | `groq_request_timeout` + `groq_max_retries` settings |
 | 9 | KB management | merged to main | embeddings.py, vectorstore.py, ingest.py, config.py | Singleton caching, idempotent ingestion, configurable chunk size |
-| 10 | Test gaps | committed | tests/test_graph.py, tests/test_ingest.py | Graph routing tests, ingestion tests (37 total) |
+| 10 | Test gaps | committed | tests/test_graph.py, tests/test_ingest.py | Graph routing tests, ingestion tests (39 total) |
 
 ### Resolved by #2 (partial)
 
