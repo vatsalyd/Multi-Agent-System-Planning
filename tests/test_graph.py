@@ -80,3 +80,51 @@ class TestProcessTicket:
         # Triage error sets confidence=0.0, which triggers escalation path
         assert result["status"] == "escalated"
         assert result["error"] == "LLM timeout"
+
+    @pytest.mark.asyncio
+    @patch("app.agents.graph.generate_resolution")
+    @patch("app.agents.graph.retrieve_documents")
+    @patch("app.agents.graph.triage_ticket")
+    async def test_retrieval_error_proceeds_to_resolution(
+        self, mock_triage, mock_retrieve, mock_resolve
+    ):
+        """When retrieval fails, graph proceeds to resolution with empty docs."""
+        mock_triage.return_value = {
+            "category": "IT_SUPPORT",
+            "confidence": 0.9,
+            "summary": "VPN issue",
+        }
+        mock_retrieve.side_effect = RuntimeError("ChromaDB timeout")
+        mock_resolve.return_value = {
+            "resolution": "Generic response without docs.",
+            "sources": [],
+        }
+
+        result = await process_ticket("My VPN is broken", source="slack")
+
+        # Retrieval error sets status=retrieval_error, but graph still routes to resolution
+        assert result["status"] == "resolved"
+        assert result["sources"] == []
+
+    @pytest.mark.asyncio
+    @patch("app.agents.graph.generate_resolution")
+    @patch("app.agents.graph.retrieve_documents")
+    @patch("app.agents.graph.triage_ticket")
+    async def test_resolution_error_captures_failure(
+        self, mock_triage, mock_retrieve, mock_resolve
+    ):
+        """When resolution fails, status is resolution_error."""
+        mock_triage.return_value = {
+            "category": "IT_SUPPORT",
+            "confidence": 0.9,
+            "summary": "VPN issue",
+        }
+        mock_retrieve.return_value = [
+            {"content": "Reset your VPN password via IT portal.", "source": "vpn.md"},
+        ]
+        mock_resolve.side_effect = RuntimeError("LLM timeout")
+
+        result = await process_ticket("My VPN is broken", source="slack")
+
+        assert result["status"] == "resolution_error"
+        assert "LLM timeout" in result["error"]

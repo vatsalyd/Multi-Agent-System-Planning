@@ -2,14 +2,13 @@
 Retrieval Agent — optimizes search queries and retrieves docs from ChromaDB.
 """
 
-import logging
-
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.llm.provider import create_llm
 from app.rag.vectorstore import similarity_search, RetrievedChunk
+from app.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 RETRIEVAL_SYSTEM_PROMPT = """You are a search query optimization specialist. Given a support ticket and its classified category, your job is to generate an optimized search query that will retrieve the most relevant company policy documents.
 
@@ -21,9 +20,11 @@ Rules:
 - Respond with ONLY the optimized search query, nothing else"""
 
 
-async def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> list[RetrievedChunk]:
+async def retrieve_documents(
+    ticket_text: str, category: str, k: int = 5
+) -> list[RetrievedChunk]:
     """Optimize the search query via LLM, then retrieve relevant docs from ChromaDB."""
-    logger.info(f"Retrieving documents for category: {category}")
+    logger.info("Retrieving documents for category: %s", category)
 
     llm = create_llm(temperature=0.0)
     messages = [
@@ -38,9 +39,9 @@ async def retrieve_documents(ticket_text: str, category: str, k: int = 5) -> lis
     ]
     response = await llm.ainvoke(messages)
     optimized_query = response.content.strip()
-    logger.info(f"Optimized search query: {optimized_query}")
+    logger.info("Optimized search query: %s", optimized_query)
 
     results = similarity_search(optimized_query, k=k)
 
-    logger.info(f"Retrieved {len(results)} document chunks")
+    logger.info("Retrieved %d document chunks", len(results))
     return results

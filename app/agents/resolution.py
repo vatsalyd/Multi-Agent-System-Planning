@@ -2,13 +2,12 @@
 Resolution Agent — generates citation-backed response drafts using Groq.
 """
 
-import logging
-
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.llm.provider import create_llm
+from app.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 RESOLUTION_SYSTEM_PROMPT = """You are a professional corporate support resolution specialist. You write clear, helpful, and empathetic response drafts for employee support tickets.
 
@@ -41,7 +40,7 @@ async def generate_resolution(
     retrieved_docs: list,
 ) -> dict:
     """Generate a resolution draft using the ticket, category, and retrieved documents."""
-    logger.info(f"Generating resolution for category: {category}")
+    logger.info("Generating resolution for category: %s", category)
 
     docs_text = ""
     sources = set()

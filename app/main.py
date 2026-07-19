@@ -2,8 +2,8 @@
 FastAPI application — REST API for the multi-agent triage system.
 """
 
-import time
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +24,40 @@ from app.agents.graph import process_ticket
 setup_logging(settings.log_level)
 logger = get_logger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan — startup checks, then yield, then shutdown."""
+    # Startup
+    logger.info(
+        "%s v%s started on %s:%s",
+        settings.app_name,
+        settings.app_version,
+        settings.host,
+        settings.port,
+    )
+    if not settings.groq_api_key:
+        logger.warning(
+            "GROQ_API_KEY is not set! API calls to agents will fail."
+        )
+
+    # ChromaDB connectivity check (fail fast)
+    try:
+        from app.rag.vectorstore import get_vectorstore
+        store = get_vectorstore()
+        store._collection.count()
+        logger.info("ChromaDB connectivity verified")
+    except Exception as e:
+        logger.error("ChromaDB connectivity check failed: %s", e)
+        # Don't raise — let health endpoint report degraded
+        # raise RuntimeError(f"ChromaDB unreachable: {e}") from e
+
+    yield
+
+    # Shutdown (if needed)
+    logger.info("Shutting down %s", settings.app_name)
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -35,6 +69,7 @@ app = FastAPI(
     ),
     docs_url="/api/v1/docs",
     redoc_url="/api/v1/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -96,7 +131,11 @@ async def health_check():
     except Exception as e:
         checks["chromadb"] = f"error: {e}"
 
-    overall = "healthy" if all(v == "configured" or v == "reachable" for v in checks.values()) else "degraded"
+    overall = (
+        "healthy"
+        if all(v == "configured" or v == "reachable" for v in checks.values())
+        else "degraded"
+    )
 
     return HealthResponse(
         status=overall,
@@ -181,16 +220,3 @@ async def triage_only(request: TicketRequest):
             status_code=500,
             detail=f"Failed to triage ticket: {str(e)}",
         )
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info(
-        "%s v%s started on %s:%s",
-        settings.app_name,
-        settings.app_version,
-        settings.host,
-        settings.port,
-    )
-    if not settings.groq_api_key:
-        logger.warning("GROQ_API_KEY is not set! API calls to agents will fail.")

@@ -100,8 +100,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # Configure environment
-copy .env.example .env          # Windows
-# cp .env.example .env          # macOS / Linux
+# copy .env .env  # (or create .env manually — see Environment Variables below)
 ```
 
 Edit `.env` and add your Groq API key:
@@ -109,6 +108,36 @@ Edit `.env` and add your Groq API key:
 ```env
 GROQ_API_KEY=gsk_your_key_here
 ```
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GROQ_API_KEY` | Yes | — | Groq API key for LLM inference |
+| `GROQ_MODEL` | No | `llama-3.3-70b-versatile` | Groq model name |
+| `GROQ_REQUEST_TIMEOUT` | No | `30` | LLM request timeout (seconds) |
+| `GROQ_MAX_RETRIES` | No | `2` | Max retries for transient LLM failures |
+| `EMBEDDING_MODEL` | No | `all-MiniLM-L6-v2` | Sentence Transformers model |
+| `CHROMA_PERSIST_DIR` | No | `./chroma_data` | ChromaDB persistence directory |
+| `CHROMA_COLLECTION_NAME` | No | `company_knowledge` | ChromaDB collection name |
+| `CHUNK_SIZE` | No | `500` | Document chunk size for ingestion |
+| `CHUNK_OVERLAP` | No | `50` | Chunk overlap for ingestion |
+| `HOST` | No | `0.0.0.0` | Server host |
+| `PORT` | No | `8000` | Server port |
+| `LOG_LEVEL` | No | `INFO` | Logging level |
+
+---
+
+### Observability
+
+HelixDesk includes production-ready observability features:
+
+- **Structured JSON Logging** — All API requests and agent operations emit structured JSON logs via `app/logging_config.py`, making logs queryable in ELK, Datadog, CloudWatch, etc.
+- **Correlation IDs** — Every request accepts or generates an `X-Correlation-ID` header that propagates through the entire agent pipeline (Triage → Retrieval → Resolution) and appears in all log entries for that request.
+- **Health Checks** — `/api/v1/health` verifies Groq API key configuration and ChromaDB connectivity; `/healthz` provides a lightweight liveness probe.
+- **Configurable Timeouts & Retries** — LLM request timeout and max retries are configurable via `GROQ_REQUEST_TIMEOUT` and `GROQ_MAX_RETRIES`.
+
+---
 
 #### Populate Knowledge Base
 
@@ -226,11 +255,14 @@ Push to main → Run Tests → Build & Push to ECR → SSH Deploy to EC2
 │   ├── main.py              # FastAPI entry point & route handlers
 │   ├── config.py            # Centralized settings (pydantic-settings)
 │   ├── models.py            # Request/response Pydantic schemas
+│   ├── logging_config.py    # Structured JSON logging + correlation IDs
 │   ├── agents/
 │   │   ├── triage.py        # Intent classification agent
 │   │   ├── retrieval.py     # RAG document retrieval agent
 │   │   ├── resolution.py    # Response generation agent
 │   │   └── graph.py         # LangGraph state machine orchestrator
+│   ├── llm/
+│   │   └── provider.py      # LLM factory (single source of truth)
 │   ├── rag/
 │   │   ├── embeddings.py    # Sentence Transformers embedding wrapper
 │   │   ├── vectorstore.py   # ChromaDB client & query interface

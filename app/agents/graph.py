@@ -3,7 +3,6 @@ LangGraph orchestration — connects Triage, Retrieval, and Resolution agents
 into a state machine with conditional routing.
 """
 
-import logging
 import time
 import uuid
 from typing import TypedDict
@@ -13,8 +12,9 @@ from langgraph.graph import StateGraph, END
 from app.agents.triage import triage_ticket
 from app.agents.retrieval import retrieve_documents
 from app.agents.resolution import generate_resolution
+from app.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 CONFIDENCE_THRESHOLD = 0.5
 
@@ -36,7 +36,7 @@ class AgentState(TypedDict):
 
 
 async def triage_node(state: AgentState) -> dict:
-    logger.info(f"[Triage Node] Processing ticket {state['ticket_id']}")
+    logger.info("[Triage Node] Processing ticket %s", state["ticket_id"])
     try:
         result = await triage_ticket(state["ticket_text"])
         return {
@@ -46,7 +46,7 @@ async def triage_node(state: AgentState) -> dict:
             "status": "triaged",
         }
     except Exception as e:
-        logger.error(f"[Triage Node] Error: {e}")
+        logger.error("[Triage Node] Error: %s", e)
         return {
             "category": "GENERAL",
             "confidence": 0.0,
@@ -57,7 +57,7 @@ async def triage_node(state: AgentState) -> dict:
 
 
 async def retrieval_node(state: AgentState) -> dict:
-    logger.info(f"[Retrieval Node] Searching docs for category: {state['category']}")
+    logger.info("[Retrieval Node] Searching docs for category: %s", state["category"])
     try:
         docs = await retrieve_documents(
             ticket_text=state["ticket_text"],
@@ -69,7 +69,7 @@ async def retrieval_node(state: AgentState) -> dict:
             "status": "documents_retrieved",
         }
     except Exception as e:
-        logger.error(f"[Retrieval Node] Error: {e}")
+        logger.error("[Retrieval Node] Error: %s", e)
         return {
             "retrieved_docs": [],
             "status": "retrieval_error",
@@ -91,7 +91,7 @@ async def resolution_node(state: AgentState) -> dict:
             "status": "resolved",
         }
     except Exception as e:
-        logger.error(f"[Resolution Node] Error: {e}")
+        logger.error("[Resolution Node] Error: %s", e)
         return {
             "resolution": f"Unable to generate resolution: {e}",
             "sources": [],
@@ -101,7 +101,9 @@ async def resolution_node(state: AgentState) -> dict:
 
 
 def escalation_node(state: AgentState) -> dict:
-    logger.info(f"[Escalation Node] Low confidence ({state['confidence']}), escalating")
+    logger.info(
+        "[Escalation Node] Low confidence (%s), escalating", state["confidence"]
+    )
     return {
         "resolution": (
             "This ticket requires human review. The automated triage system "
@@ -130,7 +132,7 @@ def build_graph() -> StateGraph:
 
     graph.set_entry_point("node_triage")
 
-    # Conditional routing: high confidence → retrieve, low → escalate
+    # Conditional routing: high confidence -> retrieve, low -> escalate
     graph.add_conditional_edges(
         "node_triage",
         should_escalate,
@@ -170,7 +172,7 @@ async def process_ticket(ticket_text: str, source: str = "api") -> dict:
         "error": "",
     }
 
-    logger.info(f"Processing ticket {initial_state['ticket_id']} from {source}")
+    logger.info("Processing ticket %s from %s", initial_state["ticket_id"], source)
 
     final_state = await compiled_graph.ainvoke(initial_state)
 
@@ -178,8 +180,10 @@ async def process_ticket(ticket_text: str, source: str = "api") -> dict:
     final_state["processing_time_ms"] = round(elapsed, 2)
 
     logger.info(
-        f"Ticket {final_state['ticket_id']} processed in "
-        f"{final_state['processing_time_ms']}ms — status: {final_state['status']}"
+        "Ticket %s processed in %sms — status: %s",
+        final_state["ticket_id"],
+        final_state["processing_time_ms"],
+        final_state["status"],
     )
 
     return final_state

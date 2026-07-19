@@ -3,13 +3,13 @@ Triage Agent — classifies tickets using Groq (LLaMA 3.3 70B).
 """
 
 import json
-import logging
 
 from langchain_core.messages import SystemMessage, HumanMessage
 
 from app.llm.provider import create_llm
+from app.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 CATEGORIES = [
     "IT_SUPPORT",
@@ -44,7 +44,7 @@ Rules:
 
 async def triage_ticket(ticket_text: str) -> dict:
     """Classify an incoming ticket into a category."""
-    logger.info(f"Triaging ticket: {ticket_text[:100]}...")
+    logger.info("Triaging ticket: %s...", ticket_text[:100])
 
     llm = create_llm(temperature=0.0)
     messages = [
@@ -66,18 +66,21 @@ async def triage_ticket(ticket_text: str) -> dict:
         result = json.loads(raw)
         if result.get("category") not in CATEGORIES:
             logger.warning(
-                f"Unknown category '{result.get('category')}', defaulting to GENERAL"
+                "Unknown category '%s', defaulting to GENERAL",
+                result.get("category"),
             )
             result["category"] = "GENERAL"
             result["confidence"] = 0.3
 
         logger.info(
-            f"Triage result: {result['category']} (confidence: {result['confidence']})"
+            "Triage result: %s (confidence: %s)",
+            result["category"],
+            result["confidence"],
         )
         return result
 
     except (json.JSONDecodeError, KeyError) as e:
-        logger.error(f"Failed to parse triage response: {e}")
+        logger.error("Failed to parse triage response: %s", e)
         return {
             "category": "GENERAL",
             "confidence": 0.0,

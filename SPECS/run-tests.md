@@ -21,14 +21,14 @@ Execute the test suite to verify all agents, API endpoints, and pipeline logic w
 ## Step-by-Step Process
 1. Ensure dependencies installed: `pip install -r requirements.txt`
 2. Run: `pytest tests/ -v`
-3. Verify: all tests pass (currently 22 tests)
+3. Verify: all tests pass (currently 39 tests)
 4. Check for deprecation warnings — note but don't block on them
 
 ## Quality Checklist
-- [ ] All 22 tests pass
+- [ ] All 39 tests pass
 - [ ] No tests hit real Groq API (all mocked)
 - [ ] No test depends on external state (ChromaDB, network)
-- [ ] Warning count is reasonable (known: pytest-asyncio deprecation, FastAPI on_event deprecation)
+- [ ] Warning count is reasonable (known: LangChain HuggingFaceEmbeddings deprecation)
 
 ## Approval Gates
 None — automated.
