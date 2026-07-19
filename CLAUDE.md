@@ -4,7 +4,7 @@
 - Python 3.12, FastAPI, LangGraph, LangChain
 - Groq LLM: llama-3.3-70b-versatile (free tier)
 - Pinecone (serverless, free tier), Sentence Transformers all-MiniLM-L6-v2 (CPU)
-- Docker → Fly.io, GitHub Actions CI/CD
+- Docker → Hugging Face Spaces, GitHub Actions CI
 
 ## Corrections
 - LLM factory is `app/llm/provider.py:create_llm()` — do not import `ChatGroq` directly in agent files
@@ -25,11 +25,12 @@
 - Models/schemas: `app/models.py`
 - Tests: `tests/`
 - CI/CD: `.github/workflows/deploy.yml`
+- HF Space config: `README.md` (in Space repo root)
 
 ## Tools & Integrations
-- Groq API: requires `GROQ_API_KEY` in `.env`
-- Pinecone: requires `PINECONE_API_KEY` in `.env`, index `helixdesk` in `us-east-1` (AWS)
-- Fly.io: deploys Docker image, scales to zero when idle
+- Groq API: requires `GROQ_API_KEY` in HF Space Secrets
+- Pinecone: requires `PINECONE_API_KEY` in HF Space Secrets, index `helixdesk` in `us-east-1` (AWS)
+- Hugging Face Spaces: deploys Docker image, scales to zero when idle (48h), no credit card required
 
 ## Never Do Without Asking
 - Change the confidence threshold (0.5 in `app/agents/graph.py`)

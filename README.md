@@ -4,10 +4,11 @@
 
 **Autonomous multi-agent system that triages, researches, and resolves enterprise support tickets in seconds — not hours.**
 
-[![CI/CD Pipeline](https://github.com/vatsalyd/Multi-Agent-System-Planning/actions/workflows/deploy.yml/badge.svg)](https://github.com/vatsalyd/Multi-Agent-System-Planning/actions)
+[![CI Pipeline](https://github.com/vatsalyd/Multi-Agent-System-Planning/actions/workflows/deploy.yml/badge.svg)](https://github.com/vatsalyd/Multi-Agent-System-Planning/actions)
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Hugging Face Spaces](https://img.shields.io/badge/Hugging%20Face%20Spaces-FFD21E?logo=huggingface&logoColor=black)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 </div>
@@ -59,7 +60,7 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 | **Vector Database** | [Pinecone](https://www.pinecone.io/) | Serverless vector DB (free tier: 2GB, 1M reads/mo) |
 | **Orchestration** | [LangGraph](https://github.com/langchain-ai/langgraph) | State machine for multi-agent coordination and routing |
 | **API Framework** | [FastAPI](https://fastapi.tiangolo.com/) | Async REST API with Pydantic validation and auto-generated docs |
-| **Deployment** | Docker → Fly.io | Containerized deployments with CI/CD via GitHub Actions |
+| **Deployment** | Docker → Hugging Face Spaces | Containerized deployments with CI via GitHub Actions |
 
 ---
 
@@ -127,7 +128,7 @@ PINECONE_API_KEY=pcsk_your_key_here
 | `CHUNK_SIZE` | No | `500` | Document chunk size for ingestion |
 | `CHUNK_OVERLAP` | No | `50` | Chunk overlap for ingestion |
 | `HOST` | No | `0.0.0.0` | Server host |
-| `PORT` | No | `8000` | Server port |
+| `PORT` | No | `7860` | Server port (HF Spaces uses 7860) |
 | `LOG_LEVEL` | No | `INFO` | Logging level |
 
 ---
@@ -152,10 +153,10 @@ python -m app.rag.ingest
 #### Start the Server
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 7860
 ```
 
-Open **http://localhost:8000/api/v1/docs** for the interactive Swagger UI.
+Open **http://localhost:7860/api/v1/docs** for the interactive Swagger UI.
 
 ---
 
@@ -167,20 +168,33 @@ docker-compose up --build
 
 # Or standalone
 docker build -t helixdesk .
-docker run -p 8000:8000 --env-file .env helixdesk
+docker run -p 7860:7860 --env-file .env helixdesk
 ```
 
 ---
 
-### Option 3 — Deployed Service (Fly.io)
+### Option 3 — Deployed Service (Hugging Face Spaces)
 
-HelixDesk is deployed on Fly.io and accessible at:
+HelixDesk is deployed on Hugging Face Spaces and accessible at:
 
 ```
-https://helixdesk.fly.dev/api/v1/docs    # Swagger UI
-https://helixdesk.fly.dev/healthz         # Health Check
+https://your-username-helixdesk.hf.space/api/v1/docs    # Swagger UI
+https://your-username-helixdesk.hf.space/healthz         # Health Check
 ```
 
+**Deploy to HF Spaces (no credit card required):**
+
+1. Create a [Hugging Face account](https://huggingface.co/join)
+2. Create a new Space → choose **Docker** SDK
+3. Push this repo to the Space:
+   ```bash
+   git remote add space https://huggingface.co/spaces/YOUR_USERNAME/helixdesk
+   git push space main
+   ```
+4. In Space Settings → Repository secrets, add:
+   - `GROQ_API_KEY`
+   - `PINECONE_API_KEY`
+5. Space auto-builds and deploys on every push!
 
 ---
 
@@ -197,7 +211,7 @@ https://helixdesk.fly.dev/healthz         # Health Check
 ### Example Request
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/tickets \
+curl -X POST http://localhost:7860/api/v1/tickets \
   -H "Content-Type: application/json" \
   -d '{"ticket_text": "I forgot my VPN password and cannot connect remotely.", "source": "slack"}'
 ```
@@ -234,18 +248,21 @@ All tests use mocked LLM calls — **no API key or network required**.
 The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`:
 
 ```
-Push to main → Run Tests → Deploy to Fly.io
+Push to main → Run Tests → Build Docker image (verify) → HF Spaces auto-deploys
 ```
+
+**Note:** Deployment to Hugging Face Spaces happens automatically when you push to the HF Space repository. The GitHub Actions workflow only runs tests and verifies the Docker build.
 
 ### Required GitHub Secrets
 
+None required for CI (tests use mocked LLMs).
+
+### HF Space Secrets (set in HF Space Settings → Repository secrets)
+
 | Secret | Description |
 |--------|-------------|
-| `FLY_API_TOKEN` | Fly.io API token (from `fly tokens create`) |
-
-Fly.io app secrets (set via `fly secrets set`):
-- `GROQ_API_KEY` — Groq API key for LLM inference
-- `PINECONE_API_KEY` — Pinecone API key for vector database
+| `GROQ_API_KEY` | Groq API key for LLM inference |
+| `PINECONE_API_KEY` | Pinecone API key for vector database |
 
 ---
 
@@ -270,11 +287,11 @@ Fly.io app secrets (set via `fly secrets set`):
 │   │   └── ingest.py        # Knowledge base ingestion script
 │   └── data/knowledge_base/ # Company policy documents (Markdown)
 ├── tests/                   # Unit & integration tests (mocked)
-├── Dockerfile               # Multi-stage production build
+├── Dockerfile               # Multi-stage production build (port 7860)
 ├── docker-compose.yml       # Local development setup
-├── fly.toml                 # Fly.io app configuration
-├── .github/workflows/       # CI/CD pipeline
-└── .env.example             # Environment variable template
+├── .github/workflows/       # CI pipeline (tests + Docker build verify)
+├── .env.example             # Environment variable template
+└── README_HF.md             # HF Space config (copy to Space repo as README.md)
 ```
 
 ---

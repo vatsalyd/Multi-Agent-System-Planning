@@ -29,23 +29,26 @@
 
 ---
 
-### Completed: Deployment Migration
+### Completed: Deployment Migration (v2 - HF Spaces)
 
 | Task | Status | Details |
 |------|--------|---------|
-| AWS ECR → Fly.io | ✅ Done | Removed AWS CI/CD, added Fly.io deploy workflow |
+| AWS ECR → HF Spaces | ✅ Done | Removed AWS CI/CD, HF Spaces auto-deploys on push |
 | ChromaDB → Pinecone | ✅ Done | Replaced local vector DB with Pinecone serverless (free tier) |
 | Docker volume removed | ✅ Done | No persistent volume needed; Pinecone handles storage |
-| CI/CD pipeline | ✅ Done | `.github/workflows/deploy.yml` uses `flyctl deploy --remote-only` |
-| Fly.io config | ✅ Done | `fly.toml` with auto-stop/start, iad region |
+| CI/CD pipeline | ✅ Done | `.github/workflows/deploy.yml` runs tests only; HF auto-deploys |
+| HF Spaces config | ✅ Done | `README.md` (in Space repo) with Docker SDK, port 7860 |
 | Environment template | ✅ Done | `.env.example` with Pinecone vars |
 
-### New Architecture
+### Architecture Evolution
 
-| Component | Before | After |
-|-----------|--------|-------|
-| Vector DB | ChromaDB (local, persistent volume) | Pinecone (serverless, cloud) |
-| Deployment | Docker → ECR → EC2 (SSH) | Docker → Fly.io (GitHub Actions) |
-| Persistent Storage | EC2 named volume | None (Pinecone managed) |
-| Region | us-east-1 (EC2) | iad (Fly.io) + us-east-1 (Pinecone) |
-| Free Tier | No (AWS costs) | Yes (Fly.io + Pinecone Starter) |
+| Component | v0 (Original) | v1 (Fly.io) | v2 (HF Spaces) |
+|-----------|---------------|-------------|----------------|
+| Vector DB | ChromaDB (local) | Pinecone (serverless) | Pinecone (serverless) |
+| Deployment | Docker → ECR → EC2 | Docker → Fly.io | Docker → HF Spaces (auto) |
+| Persistent Storage | EC2 named volume | None (Pinecone) | None (Pinecone) |
+| Region | us-east-1 (EC2) | iad (Fly.io) + us-east-1 | HF (Frankfurt/DC) + us-east-1 |
+| Free Tier | No (AWS costs) | Yes (Fly.io + Pinecone) | **Yes (HF Spaces + Pinecone, no CC)** |
+| Credit Card | Required | Required | **Not required** |
+| RAM | 256MB | 256MB | **16GB** |
+| Sleep Policy | Auto-stop | Auto-stop | 48h idle |

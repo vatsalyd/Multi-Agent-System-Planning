@@ -1,68 +1,70 @@
 # Deploy Specification
 
-*Version: 2.0 | Last updated: 2026-07-20*
+*Version: 3.0 | Last updated: 2026-07-20*
 
 ## Purpose
-Deploy HelixDesk to production via GitHub Actions CI/CD pipeline: push to main → test → deploy to Fly.io (Pinecone is managed cloud, no deployment needed).
+Deploy HelixDesk to production on Hugging Face Spaces (Docker SDK). Deployment is automatic on git push to the HF Space repo. GitHub Actions CI runs tests and verifies Docker build.
 
 ## Trigger
-- Push to `main` branch
+- Push to `main` branch (GitHub repo)
+- Push to HF Space repo (auto-deploys)
 - Manual trigger via GitHub Actions
 
 ## Inputs Required
-- All GitHub Secrets configured (see below)
 - Code on `main` branch with passing tests
-- Fly.io app created (`fly launch` once)
+- HF Space created (Docker SDK, free tier)
 - Pinecone index exists (created automatically on first app startup)
+- HF Space secrets configured
 
 ## Output Definition
-- Format: Running Fly.io Machine in `iad` region
-- Quality bar: Health check returns 200, API docs accessible at `https://helixdesk.fly.dev/api/v1/docs`
-- Destination: Fly.io free tier (shared-cpu-1x, 256MB RAM, auto-stop on idle)
+- Format: Running HF Space container (Docker, 16GB RAM, 2 vCPU, free tier)
+- Quality bar: Health check returns 200, API docs accessible at `https://YOUR_USERNAME-helixdesk.hf.space/api/v1/docs`
+- Destination: Hugging Face Spaces free tier (scales to zero after 48h idle, cold start ~30-60s)
 
 ## Step-by-Step Process
-1. Push code to `main` branch
-2. GitHub Actions runs tests (`pytest tests/ -v`)
-3. On test pass: `flyctl deploy --remote-only` builds Docker image on Fly.io builders and deploys
-4. Fly.io starts Machine, health check verifies `/api/v1/health`
-5. App scales to zero when idle, cold-starts on first request (~3-8s)
+1. Push code to `main` branch (GitHub)
+2. GitHub Actions runs tests (`pytest tests/ -v`) and verifies Docker build
+3. Push to HF Space repo (or mirror from GitHub) triggers HF auto-deploy
+4. HF builds Docker image, starts container on port 7860
+5. Health check verifies `/api/v1/health` with Pinecone connectivity
+6. App available at `https://YOUR_USERNAME-helixdesk.hf.space`
 
 ## Required GitHub Secrets
-| Secret | Description |
-|--------|-------------|
-| `FLY_API_TOKEN` | Fly.io API token (from `fly tokens create`) |
+None for CI (tests use mocked LLMs).
 
-## Required Fly.io App Secrets (set via `fly secrets set`)
+## Required HF Space Secrets (set in HF Space Settings → Repository secrets)
 | Secret | Description |
 |--------|-------------|
 | `GROQ_API_KEY` | Groq API key for LLM inference |
 | `PINECONE_API_KEY` | Pinecone API key for vector database |
 
 ## Quality Checklist
-- [ ] Tests pass before deploy
-- [ ] Fly.io deploy succeeds
+- [ ] Tests pass
+- [ ] Docker build succeeds
+- [ ] HF Space deploy succeeds (check HF Space logs)
 - [ ] Health check returns 200 with `pinecone: "reachable"`
 - [ ] Swagger UI accessible at `/api/v1/docs`
 - [ ] Ticket submission works end-to-end
 
 ## Approval Gates
-None — automated on push to main.
+None — automated on push to HF Space repo.
 
 ## Error Handling
-- Test failure → deploy skipped, check GitHub Actions logs
-- Fly.io deploy failure → check `flyctl` logs, verify secrets are set
+- Test failure → deploy not triggered, check GitHub Actions logs
+- Docker build failure → check CI logs
+- HF deploy failure → check HF Space build logs
 - Health check failure → Pinecone API key may be invalid, or index not yet created (first deploy creates index)
-- Cold start timeout → increase `start_period` in health check if needed
+- Cold start timeout → HF Spaces handles wake-up; first request after 48h idle takes 30-60s
 
 ## Common Failure Modes
-- Fly.io token expired → regenerate with `fly tokens create`
-- Pinecone API key invalid → verify in Pinecone console, update via `fly secrets set`
+- Pinecone API key invalid → verify in Pinecone console, update in HF Space secrets
 - Pinecone index dimension mismatch → must be 384 for `all-MiniLM-L6-v2`
-- Fly.io free tier limits exceeded → scale to paid plan or wait for reset
+- HF Space build timeout → Docker image too large; optimize dependencies
+- HF Space OOM → free tier has 16GB RAM; should not happen with this app
 
 ## Local Development
 ```bash
-# Start with Docker Compose
+# Start with Docker Compose (port 7860)
 docker-compose up --build
 
 # Run ingestion (requires PINECONE_API_KEY in .env)
@@ -71,7 +73,15 @@ python -m app.rag.ingest
 
 ## Manual Deploy (if needed)
 ```bash
-flyctl deploy --remote-only
-flyctl logs  # tail logs
-flyctl status  # check app status
+# Clone HF Space repo
+git clone https://huggingface.co/spaces/YOUR_USERNAME/helixdesk
+cd helixdesk
+
+# Copy your code, commit, push
+git add .
+git commit -m "Deploy"
+git push  # HF auto-deploys
+
+# View logs in HF Space UI or:
+# gh api -X GET /repos/YOUR_USERNAME/helixdesk/actions/runs
 ```

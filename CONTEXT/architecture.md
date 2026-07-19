@@ -4,8 +4,8 @@
 
 ```
 Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Resolution Agent → Output
-                                          ↓ (< 0.5)
-                                    Escalation Node → Human Review
+                                           ↓ (< 0.5)
+                                     Escalation Node → Human Review
 ```
 
 ## Components

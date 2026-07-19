@@ -4,11 +4,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "7860:7860"
     env_file:
       - .env
     healthcheck:
-      test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()" ]
+      test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:7860/api/v1/health').raise_for_status()" ]
       interval: 30s
       timeout: 10s
       retries: 3
