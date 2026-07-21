@@ -8,7 +8,7 @@
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
-![Hugging Face Spaces](https://img.shields.io/badge/Hugging%20Face%20Spaces-FFD21E?logo=huggingface&logoColor=black)
+![Render](https://img.shields.io/badge/Render-46E3B7?logo=render&logoColor=black)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 </div>
@@ -56,11 +56,11 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 | Component | Technology | Details |
 |-----------|-----------|---------|
 | **LLM** | [Groq](https://groq.com/) | `llama-3.3-70b-versatile` — free, fast inference via Groq Cloud |
-| **Embeddings** | [Sentence Transformers](https://www.sbert.net/) | `all-MiniLM-L6-v2` — local, CPU-only, no API key needed |
+| **Embeddings** | [Pinecone Inference API](https://www.pinecone.io/) | `multilingual-e5-large` — server-side embeddings, no local model |
 | **Vector Database** | [Pinecone](https://www.pinecone.io/) | Serverless vector DB (free tier: 2GB, 1M reads/mo) |
 | **Orchestration** | [LangGraph](https://github.com/langchain-ai/langgraph) | State machine for multi-agent coordination and routing |
 | **API Framework** | [FastAPI](https://fastapi.tiangolo.com/) | Async REST API with Pydantic validation and auto-generated docs |
-| **Deployment** | Docker → Hugging Face Spaces | Containerized deployments with CI via GitHub Actions |
+| **Deployment** | Docker → Render | Containerized deployments with CI via GitHub Actions |
 
 ---
 
@@ -120,15 +120,15 @@ PINECONE_API_KEY=pcsk_your_key_here
 | `GROQ_MODEL` | No | `llama-3.3-70b-versatile` | Groq model name |
 | `GROQ_REQUEST_TIMEOUT` | No | `30` | LLM request timeout (seconds) |
 | `GROQ_MAX_RETRIES` | No | `2` | Max retries for transient LLM failures |
-| `EMBEDDING_MODEL` | No | `all-MiniLM-L6-v2` | Sentence Transformers model |
 | `PINECONE_API_KEY` | Yes | — | Pinecone API key for vector database |
 | `PINECONE_INDEX_NAME` | No | `helixdesk` | Pinecone index name |
 | `PINECONE_CLOUD` | No | `aws` | Pinecone cloud provider |
 | `PINECONE_REGION` | No | `us-east-1` | Pinecone region (must match index) |
+| `PINECONE_EMBEDDING_MODEL` | No | `multilingual-e5-large` | Pinecone embedding model |
 | `CHUNK_SIZE` | No | `500` | Document chunk size for ingestion |
 | `CHUNK_OVERLAP` | No | `50` | Chunk overlap for ingestion |
 | `HOST` | No | `0.0.0.0` | Server host |
-| `PORT` | No | `7860` | Server port (HF Spaces uses 7860) |
+| `PORT` | No | `8000` | Server port |
 | `LOG_LEVEL` | No | `INFO` | Logging level |
 
 ---
@@ -153,10 +153,10 @@ python -m app.rag.ingest
 #### Start the Server
 
 ```bash
-uvicorn app.main:app --reload --port 7860
+uvicorn app.main:app --reload --port 8000
 ```
 
-Open **http://localhost:7860/api/v1/docs** for the interactive Swagger UI.
+Open **http://localhost:8000/api/v1/docs** for the interactive Swagger UI.
 
 ---
 
@@ -168,33 +168,33 @@ docker-compose up --build
 
 # Or standalone
 docker build -t helixdesk .
-docker run -p 7860:7860 --env-file .env helixdesk
+docker run -p 8000:8000 --env-file .env helixdesk
 ```
 
 ---
 
-### Option 3 — Deployed Service (Hugging Face Spaces)
+### Option 3 — Deployed Service (Render)
 
-HelixDesk is deployed on Hugging Face Spaces and accessible at:
+HelixDesk is deployed on Render and accessible at:
 
 ```
-https://your-username-helixdesk.hf.space/api/v1/docs    # Swagger UI
-https://your-username-helixdesk.hf.space/healthz         # Health Check
+https://helixdesk.onrender.com/api/v1/docs    # Swagger UI
+https://helixdesk.onrender.com/healthz         # Health Check
 ```
 
-**Deploy to HF Spaces (no credit card required):**
+**Deploy to Render (no credit card required):**
 
-1. Create a [Hugging Face account](https://huggingface.co/join)
-2. Create a new Space → choose **Docker** SDK
-3. Push this repo to the Space:
-   ```bash
-   git remote add space https://huggingface.co/spaces/YOUR_USERNAME/helixdesk
-   git push space main
-   ```
-4. In Space Settings → Repository secrets, add:
+1. Create a [Render account](https://dashboard.render.com/register)
+2. New → Web Service → Connect your GitHub repo
+3. Render auto-detects `render.yaml` and configures:
+   - **Runtime:** Python
+   - **Build:** `pip install -r requirements.txt`
+   - **Start:** `python -m app.rag.ingest && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Plan:** Free (512MB RAM, 750 hrs/mo, sleeps after 15min idle → 30-50s cold start)
+4. In Settings → Environment, add:
    - `GROQ_API_KEY`
    - `PINECONE_API_KEY`
-5. Space auto-builds and deploys on every push!
+5. Service auto-deploys on every push to `main`!
 
 ---
 
@@ -207,11 +207,12 @@ https://your-username-helixdesk.hf.space/healthz         # Health Check
 | `GET` | `/api/v1/health` | Detailed health check with version info |
 | `GET` | `/healthz` | Lightweight liveness probe |
 | `GET` | `/api/v1/docs` | Interactive Swagger UI |
+| `GET` | `/api/v1/redoc` | ReDoc documentation |
 
 ### Example Request
 
 ```bash
-curl -X POST http://localhost:7860/api/v1/tickets \
+curl -X POST http://localhost:8000/api/v1/tickets \
   -H "Content-Type: application/json" \
   -d '{"ticket_text": "I forgot my VPN password and cannot connect remotely.", "source": "slack"}'
 ```
@@ -248,16 +249,16 @@ All tests use mocked LLM calls — **no API key or network required**.
 The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`:
 
 ```
-Push to main → Run Tests → Build Docker image (verify) → HF Spaces auto-deploys
+Push to main → Run Tests → Build Docker image (verify) → Render auto-deploys
 ```
 
-**Note:** Deployment to Hugging Face Spaces happens automatically when you push to the HF Space repository. The GitHub Actions workflow only runs tests and verifies the Docker build.
+**Note:** Deployment to Render happens automatically when you push to the Render-connected repo. The GitHub Actions workflow only runs tests and verifies the Docker build.
 
 ### Required GitHub Secrets
 
 None required for CI (tests use mocked LLMs).
 
-### HF Space Secrets (set in HF Space Settings → Repository secrets)
+### Render Environment Variables (set in Render Dashboard → Settings → Environment)
 
 | Secret | Description |
 |--------|-------------|
@@ -282,16 +283,17 @@ None required for CI (tests use mocked LLMs).
 │   ├── llm/
 │   │   └── provider.py      # LLM factory (single source of truth)
 │   ├── rag/
-│   │   ├── embeddings.py    # Sentence Transformers embedding wrapper
+│   │   ├── embeddings.py    # Pinecone Inference API embedding wrapper
 │   │   ├── vectorstore.py   # Pinecone client & query interface
 │   │   └── ingest.py        # Knowledge base ingestion script
 │   └── data/knowledge_base/ # Company policy documents (Markdown)
 ├── tests/                   # Unit & integration tests (mocked)
-├── Dockerfile               # Multi-stage production build (port 7860)
+├── Dockerfile               # Multi-stage production build (port 8000)
 ├── docker-compose.yml       # Local development setup
+├── render.yaml              # Render blueprint spec
 ├── .github/workflows/       # CI pipeline (tests + Docker build verify)
 ├── .env.example             # Environment variable template
-└── README_HF.md             # HF Space config (copy to Space repo as README.md)
+└── SPECS/deploy.md          # Deployment specification
 ```
 
 ---

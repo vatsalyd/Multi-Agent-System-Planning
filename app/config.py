@@ -1,5 +1,5 @@
 """
-Centralized application settings — Groq (free LLM) + local embeddings + Pinecone vector DB.
+Centralized application settings — Groq (free LLM) + Pinecone embeddings + Pinecone vector DB.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,13 +17,12 @@ class Settings(BaseSettings):
     groq_request_timeout: int = 30
     groq_max_retries: int = 2
 
-    embedding_model: str = "all-MiniLM-L6-v2"
-
     pinecone_api_key: str = ""
     pinecone_index_name: str = "helixdesk"
     pinecone_cloud: str = "aws"
     pinecone_region: str = "us-east-1"
-    pinecone_dimension: int = 384
+    pinecone_dimension: int = 1024
+    pinecone_embedding_model: str = "multilingual-e5-large"
 
     chunk_size: int = 500
     chunk_overlap: int = 50

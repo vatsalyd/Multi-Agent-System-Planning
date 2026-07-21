@@ -4,8 +4,8 @@
 
 ```
 Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Resolution Agent → Output
-                                           ↓ (< 0.5)
-                                     Escalation Node → Human Review
+                                            ↓ (< 0.5)
+                                      Escalation Node → Human Review
 ```
 
 ## Components
@@ -18,7 +18,7 @@ Ticket Input → Triage Agent → [confidence check] → Retrieval Agent → Res
 | Retrieval | `app/agents/retrieval.py` | Optimizes query, searches Pinecone (async) |
 | Resolution | `app/agents/resolution.py` | Generates citation-backed response (async) |
 | Graph | `app/agents/graph.py` | LangGraph state machine orchestration (async) |
-| Embeddings | `app/rag/embeddings.py` | Sentence Transformers (CPU, singleton cached) |
+| Embeddings | `app/rag/embeddings.py` | Pinecone Inference API (multilingual-e5-large, 1024 dims) |
 | Vector Store | `app/rag/vectorstore.py` | Pinecone client, `RetrievedChunk` domain type (singleton cached) |
 | Ingestion | `app/rag/ingest.py` | Loads MD docs → chunks → embeds → stores (idempotent) |
 | Config | `app/config.py` | pydantic-settings, reads `.env` |

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: helixdesk
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.rag.ingest && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: helixdesk
+      - key: PINECONE_EMBEDDING_MODEL
+        value: multilingual-e5-large
+      - key: LOG_LEVEL
+        value: INFO
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 8000
+    healthCheckPath: /api/v1/health
+    autoDeploy: true

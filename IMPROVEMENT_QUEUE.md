@@ -29,26 +29,30 @@
 
 ---
 
-### Completed: Deployment Migration (v2 - HF Spaces)
+### Completed: Deployment Migration (v3 - Render)
 
 | Task | Status | Details |
 |------|--------|---------|
-| AWS ECR → HF Spaces | ✅ Done | Removed AWS CI/CD, HF Spaces auto-deploys on push |
+| AWS ECR → Render | ✅ Done | Removed AWS CI/CD, Render auto-deploys on push |
 | ChromaDB → Pinecone | ✅ Done | Replaced local vector DB with Pinecone serverless (free tier) |
+| Sentence Transformers → Pinecone Inference API | ✅ Done | Eliminated torch/sentence-transformers; server-side embeddings |
 | Docker volume removed | ✅ Done | No persistent volume needed; Pinecone handles storage |
-| CI/CD pipeline | ✅ Done | `.github/workflows/deploy.yml` runs tests only; HF auto-deploys |
-| HF Spaces config | ✅ Done | `README.md` (in Space repo) with Docker SDK, port 7860 |
+| CI/CD pipeline | ✅ Done | `.github/workflows/deploy.yml` runs tests only; Render auto-deploys |
+| Render config | ✅ Done | `render.yaml` blueprint spec, port 8000 |
 | Environment template | ✅ Done | `.env.example` with Pinecone vars |
 
 ### Architecture Evolution
 
-| Component | v0 (Original) | v1 (Fly.io) | v2 (HF Spaces) |
-|-----------|---------------|-------------|----------------|
-| Vector DB | ChromaDB (local) | Pinecone (serverless) | Pinecone (serverless) |
-| Deployment | Docker → ECR → EC2 | Docker → Fly.io | Docker → HF Spaces (auto) |
-| Persistent Storage | EC2 named volume | None (Pinecone) | None (Pinecone) |
-| Region | us-east-1 (EC2) | iad (Fly.io) + us-east-1 | HF (Frankfurt/DC) + us-east-1 |
-| Free Tier | No (AWS costs) | Yes (Fly.io + Pinecone) | **Yes (HF Spaces + Pinecone, no CC)** |
-| Credit Card | Required | Required | **Not required** |
-| RAM | 256MB | 256MB | **16GB** |
-| Sleep Policy | Auto-stop | Auto-stop | 48h idle |
+| Component | v0 (Original) | v1 (Fly.io) | v2 (HF Spaces) | v3 (Render) |
+|-----------|---------------|-------------|----------------|-------------|
+| Vector DB | ChromaDB (local) | Pinecone (serverless) | Pinecone (serverless) | Pinecone (serverless) |
+| Embeddings | Sentence Transformers (local) | Sentence Transformers (local) | Sentence Transformers (local) | **Pinecone Inference API** |
+| Deployment | Docker → ECR → EC2 | Docker → Fly.io | Docker → HF Spaces | **Docker → Render** |
+| Persistent Storage | EC2 named volume | None (Pinecone) | None (Pinecone) | None (Pinecone) |
+| Region | us-east-1 (EC2) | iad (Fly.io) + us-east-1 | HF (Frankfurt/DC) + us-east-1 | oregon (Render) + us-east-1 |
+| Free Tier | No (AWS costs) | Yes (Fly.io + Pinecone) | **Yes (HF Spaces + Pinecone)** | **Yes (Render + Pinecone, no CC)** |
+| Credit Card | Required | Required | **Not required** | **Not required** |
+| RAM | 256MB | 256MB | **16GB** | **512MB** |
+| Sleep Policy | Auto-stop | Auto-stop | 48h idle | **15min idle** |
+| Docker Image Size | ~1.5GB | ~1.5GB | ~1.5GB | **~468MB** |
+| Runtime Memory | ~400MB | ~400MB | ~400MB | **~50MB** |

@@ -3,15 +3,15 @@
 ## Stack
 - Python 3.12, FastAPI, LangGraph, LangChain
 - Groq LLM: llama-3.3-70b-versatile (free tier)
-- Pinecone (serverless, free tier), Sentence Transformers all-MiniLM-L6-v2 (CPU)
-- Docker → Hugging Face Spaces, GitHub Actions CI
+- Pinecone (serverless, free tier) for vector DB + embeddings via Inference API
+- Docker → Render, GitHub Actions CI
 
 ## Corrections
 - LLM factory is `app/llm/provider.py:create_llm()` — do not import `ChatGroq` directly in agent files
 - All agent functions are async (`async def`) — use `await`, never call synchronously
 - Retrieved chunks use `app/rag/vectorstore.py:RetrievedChunk` dataclass — not LangChain `Document` or dicts
 - `compiled_graph` is built at module import time in `app/agents/graph.py` — do not re-instantiate
-- Embeddings run on CPU only (`model_kwargs={"device": "cpu"}`) — do not change to GPU
+- Embeddings use Pinecone Inference API (`multilingual-e5-large`, 1024 dims) — no local model
 - `app/config.py` uses `pydantic-settings` with `.env` — do not hardcode values
 - Tests mock `create_llm` (not `ChatGroq`) and use `AsyncMock` — never hit real Groq API during tests
 
@@ -25,12 +25,12 @@
 - Models/schemas: `app/models.py`
 - Tests: `tests/`
 - CI/CD: `.github/workflows/deploy.yml`
-- HF Space config: `README.md` (in Space repo root)
+- Render config: `render.yaml`
 
 ## Tools & Integrations
-- Groq API: requires `GROQ_API_KEY` in HF Space Secrets
-- Pinecone: requires `PINECONE_API_KEY` in HF Space Secrets, index `helixdesk` in `us-east-1` (AWS)
-- Hugging Face Spaces: deploys Docker image, scales to zero when idle (48h), no credit card required
+- Groq API: requires `GROQ_API_KEY` in Render Environment
+- Pinecone: requires `PINECONE_API_KEY` in Render Environment, index `helixdesk` in `us-east-1` (AWS)
+- Render: deploys Docker image, free tier (512MB RAM, 750 hrs/mo, sleeps after 15min idle)
 
 ## Never Do Without Asking
 - Change the confidence threshold (0.5 in `app/agents/graph.py`)

@@ -1,5 +1,5 @@
 """
-Retrieval Agent — optimizes search queries and retrieves docs from ChromaDB.
+Retrieval Agent — optimizes search queries and retrieves docs from Pinecone.
 """
 
 from langchain_core.messages import SystemMessage, HumanMessage

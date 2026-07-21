@@ -11,10 +11,7 @@ langchain-community==0.3.14
 langgraph==0.2.62
 
 # Vector DB
-pinecone-client==6.0.2
-
-# Free local embeddings (no API key needed)
-sentence-transformers==3.4.1
+pinecone-client==5.0.1
 
 # Utilities
 httpx==0.28.1

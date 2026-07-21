@@ -51,7 +51,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("Pinecone connectivity check failed: %s", e)
         # Don't raise — let health endpoint report degraded
-        # raise RuntimeError(f"ChromaDB unreachable: {e}") from e
 
     yield
 
@@ -123,7 +122,7 @@ async def health_check():
     else:
         checks["groq_api_key"] = "missing"
 
-    # ChromaDB check
+    # Pinecone check
     try:
         from app.rag.vectorstore import get_pinecone_client
         pc = get_pinecone_client()
