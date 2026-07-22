@@ -1,4 +1,4 @@
-# 🚀 HelixDesk — AI-Powered Enterprise Support Intelligence
+# HelixDesk — AI-Powered Enterprise Support Intelligence
 
 <div align="center">
 
@@ -15,23 +15,23 @@
 
 ---
 
-## 🚀 What is HelixDesk?
+## What is HelixDesk?
 
 HelixDesk is a **production-ready, multi-agent AI system** built for enterprise support teams. It processes incoming support tickets through an intelligent pipeline of specialized AI agents that classify, research, and draft professional resolutions — all backed by your company's internal knowledge base.
 
 Instead of a single LLM prompt, HelixDesk uses a **state-machine orchestrated agent graph** where each agent is an expert at one task, producing faster, more accurate, and citation-backed responses.
 
-### ✨ Key Capabilities
+### Key Capabilities
 
-- 🏷️ **Smart Triage** — Instantly classifies tickets into categories (IT, HR, Expense, Onboarding) with confidence scoring
-- 🔍 **Contextual Retrieval** — Searches your internal knowledge base using semantic vector search to find the most relevant policy documents
-- 📝 **Citation-Backed Resolutions** — Generates professional response drafts with inline references to source documents
-- ⚡ **Human Escalation** — Automatically routes low-confidence tickets to human agents instead of guessing
-- 🔗 **API-First Design** — RESTful API with Swagger UI, ready to integrate with Slack, email parsers, ticketing systems, and webhooks
+- **Smart Triage** — Instantly classifies tickets into categories (IT, HR, Expense, Onboarding) with confidence scoring
+- **Contextual Retrieval** — Searches your internal knowledge base using semantic vector search to find the most relevant policy documents
+- **Citation-Backed Resolutions** — Generates professional response drafts with inline references to source documents
+- **Human Escalation** — Automatically routes low-confidence tickets to human agents instead of guessing
+- **API-First Design** — RESTful API with Swagger UI, ready to integrate with Slack, email parsers, ticketing systems, and webhooks
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 <div align="center">
 
@@ -51,7 +51,7 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
 | Component | Technology | Details |
 |-----------|-----------|---------|
@@ -64,7 +64,7 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 
 ---
 
-## 💼 Use Cases
+## Use Cases
 
 | Use Case | Description |
 |----------|-------------|
@@ -77,7 +77,7 @@ If the Triage Agent's confidence falls below **50%**, the ticket is automaticall
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Option 1 — Run Locally
 
@@ -189,8 +189,8 @@ https://helixdesk.onrender.com/healthz         # Health Check
 3. Render auto-detects `render.yaml` and configures:
    - **Runtime:** Python
    - **Build:** `pip install -r requirements.txt`
-   - **Start:** `python -m app.rag.ingest && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Plan:** Free (512MB RAM, 750 hrs/mo, sleeps after 15min idle → 30-50s cold start)
+   - **Start:** `python -m app.rag.ingest; uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Plan:** Free (512MB RAM, 750 hrs/mo, sleeps after 15min idle, 30-50s cold start)
 4. In Settings → Environment, add:
    - `GROQ_API_KEY`
    - `PINECONE_API_KEY`
@@ -198,7 +198,7 @@ https://helixdesk.onrender.com/healthz         # Health Check
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -234,7 +234,7 @@ curl -X POST http://localhost:8000/api/v1/tickets \
 
 ---
 
-## 🧪 Running Tests
+## Running Tests
 
 ```bash
 pytest tests/ -v
@@ -244,7 +244,7 @@ All tests use mocked LLM calls — **no API key or network required**.
 
 ---
 
-## 🔄 CI/CD Pipeline
+## CI/CD Pipeline
 
 The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`:
 
@@ -267,7 +267,7 @@ None required for CI (tests use mocked LLMs).
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── app/
@@ -298,6 +298,6 @@ None required for CI (tests use mocked LLMs).
 
 ---
 
-## 📄 License
+## License
 
 MIT — see [LICENSE](LICENSE) for details.
