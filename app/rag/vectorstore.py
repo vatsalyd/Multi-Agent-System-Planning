@@ -3,6 +3,7 @@ Pinecone vector store — cloud vector database for document embeddings.
 """
 
 import functools
+import time
 from dataclasses import dataclass
 
 from pinecone import Pinecone, ServerlessSpec
@@ -37,12 +38,30 @@ def _ensure_index_exists(pc: Pinecone) -> None:
                 region=settings.pinecone_region,
             ),
         )
+        # Wait for index to be ready (Pinecone index creation is async)
+        for _ in range(60):
+            try:
+                desc = pc.describe_index(settings.pinecone_index_name)
+                if desc.status.ready:
+                    break
+            except Exception:
+                pass
+            time.sleep(2)
 
 
 @functools.lru_cache(maxsize=1)
 def get_vectorstore() -> PineconeVectorStore:
     pc = get_pinecone_client()
     _ensure_index_exists(pc)
+    # Wait for index to be ready
+    for _ in range(30):
+        try:
+            desc = pc.describe_index(settings.pinecone_index_name)
+            if desc.status.ready:
+                break
+        except Exception:
+            pass
+        time.sleep(2)
     index = pc.Index(settings.pinecone_index_name)
     return PineconeVectorStore(
         index=index,
