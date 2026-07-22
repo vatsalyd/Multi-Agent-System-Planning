@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass
 
 from pinecone import Pinecone, ServerlessSpec
+from pinecone.core.openapi.shared.exceptions import NotFoundException
 from langchain_pinecone import PineconeVectorStore
 
 from app.config import settings
@@ -74,7 +75,10 @@ def clear_collection():
     pc = get_pinecone_client()
     _ensure_index_exists(pc)
     index = pc.Index(settings.pinecone_index_name)
-    index.delete(delete_all=True, namespace="")
+    try:
+        index.delete(delete_all=True, namespace="")
+    except NotFoundException:
+        pass  # Namespace doesn't exist yet — nothing to clear
     get_vectorstore.cache_clear()
 
 
