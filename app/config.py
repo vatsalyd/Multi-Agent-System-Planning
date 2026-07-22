@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     port: int = 8000
     log_level: str = "INFO"
 
-    app_name: str = "Multi-Agent Triage System"
+    app_name: str = "HelixDesk"
     app_version: str = "1.0.0"
 
 
