@@ -3,12 +3,12 @@
 *Version: 4.0 | Last updated: 2026-07-22*
 
 ## Purpose
-Deploy HelixDesk to production on Render (free tier). Deployment is automatic on git push to the Render-connected repo. GitHub Actions CI runs tests and verifies Docker build.
+Deploy HelixDesk to production on Render (free tier). Auto-deploy on push requires enabling Auto-Deploy in Render Dashboard. GitHub Actions CI runs tests and verifies Docker build.
 
 ## Trigger
 - Push to `main` branch (GitHub repo)
-- Push to Render-connected repo (auto-deploys)
-- Manual trigger via GitHub Actions
+- Push to Render-connected repo (if Auto-Deploy enabled in Dashboard)
+- Manual trigger via Render Dashboard → Manual Deploy
 
 ## Inputs Required
 - Code on `main` branch with passing tests
@@ -18,16 +18,18 @@ Deploy HelixDesk to production on Render (free tier). Deployment is automatic on
 
 ## Output Definition
 - Format: Running Render web service container (Docker, 512MB RAM, 0.1 CPU, free tier)
-- Quality bar: Health check returns 200, API docs accessible at `https://helixdesk.onrender.com/api/v1/docs`
+- Quality bar: Health check returns 200, API docs accessible at `https://multi-agent-system-planning.onrender.com/api/v1/docs`
 - Destination: Render free tier (scales to zero after 15min idle, cold start ~30-50s)
 
 ## Step-by-Step Process
 1. Push code to `main` branch (GitHub)
 2. GitHub Actions runs tests (`pytest tests/ -v`) and verifies Docker build
-3. Push to Render-connected repo (or mirror from GitHub) triggers Render auto-deploy
-4. Render builds Docker image, starts container on port from `$PORT` env var (8000)
-5. Health check verifies `/api/v1/health` with Pinecone connectivity
-6. App available at `https://helixdesk.onrender.com`
+3. If Auto-Deploy is enabled in Render Dashboard → Settings → Deploy → Auto-Deploy = Yes, deploy triggers automatically
+4. Otherwise, trigger Manual Deploy in Render Dashboard
+5. Render builds Docker image, starts container on port from `$PORT` env var (8000)
+6. Startup runs ingestion: `python -m app.rag.ingest` (creates index if missing, idempotent)
+7. Health check verifies `/api/v1/health` with Pinecone connectivity
+8. App available at `https://multi-agent-system-planning.onrender.com`
 
 ## Required GitHub Secrets
 None for CI (tests use mocked LLMs).
@@ -56,7 +58,7 @@ Additional config via `render.yaml`:
 - [ ] Ticket submission works end-to-end
 
 ## Approval Gates
-None — automated on push to Render-connected repo.
+None — push to main + Auto-Deploy enabled in Dashboard triggers deploy automatically.
 
 ## Error Handling
 - Test failure → deploy not triggered, check GitHub Actions logs
@@ -80,15 +82,17 @@ docker-compose up --build
 python -m app.rag.ingest
 ```
 
-## Manual Deploy (if needed)
+## Manual Deploy (if auto-deploy is off)
 ```bash
-# Render auto-deploys on push to connected repo
-# Or use Render CLI:
-# render deploy helixdesk
+# Push to Render-connected repo
+git push origin main
+
+# Then in Render Dashboard:
+# → Manual Deploy → Deploy latest commit
 ```
 
 ## Keep-Alive (Optional)
 To prevent 15min idle spin-down and eliminate cold starts:
-- Add a free cron job (cron-job.org, cronjob.run, UptimeRobot) hitting `/healthz` every 30 minutes
+- Add a free cron job (cron-job.org, cronjob.run, UptimeRobot) hitting `https://multi-agent-system-planning.onrender.com/healthz` every 30 minutes
 - Costs ~240 hrs/mo of 750 hrs free budget
 - No code changes needed — purely external config

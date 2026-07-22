@@ -178,23 +178,23 @@ docker run -p 8000:8000 --env-file .env helixdesk
 HelixDesk is deployed on Render and accessible at:
 
 ```
-https://helixdesk.onrender.com/api/v1/docs    # Swagger UI
-https://helixdesk.onrender.com/healthz         # Health Check
+https://multi-agent-system-planning.onrender.com/api/v1/docs    # Swagger UI
+https://multi-agent-system-planning.onrender.com/healthz         # Health Check
 ```
 
 **Deploy to Render (no credit card required):**
 
 1. Create a [Render account](https://dashboard.render.com/register)
-2. New → Web Service → Connect your GitHub repo
-3. Render auto-detects `render.yaml` and configures:
-   - **Runtime:** Python
+2. New → Web Service → Connect your GitHub repo (`vatsalyd/Multi-Agent-System-Planning`)
+3. Keep defaults (Render auto-detects Python from `requirements.txt`):
    - **Build:** `pip install -r requirements.txt`
    - **Start:** `python -m app.rag.ingest; uvicorn app.main:app --host 0.0.0.0 --port $PORT`
    - **Plan:** Free (512MB RAM, 750 hrs/mo, sleeps after 15min idle, 30-50s cold start)
 4. In Settings → Environment, add:
    - `GROQ_API_KEY`
    - `PINECONE_API_KEY`
-5. Service auto-deploys on every push to `main`!
+5. In Settings → Deploy, **enable Auto-Deploy** (set to "Yes") — otherwise you must deploy manually every push
+6. Service deploys! First deploy creates Pinecone index at 1024-dim and runs ingestion automatically.
 
 ---
 
