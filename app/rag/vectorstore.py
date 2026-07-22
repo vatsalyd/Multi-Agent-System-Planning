@@ -53,6 +53,7 @@ def get_vectorstore() -> PineconeVectorStore:
 def clear_collection():
     """Delete all vectors from the index. Called before re-ingestion."""
     pc = get_pinecone_client()
+    _ensure_index_exists(pc)
     index = pc.Index(settings.pinecone_index_name)
     index.delete(delete_all=True, namespace="")
     get_vectorstore.cache_clear()
