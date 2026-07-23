@@ -2,6 +2,7 @@
 FastAPI application — REST API for the multi-agent triage system.
 """
 
+import time
 import uuid
 from contextlib import asynccontextmanager
 
@@ -20,6 +21,7 @@ from app.models import (
 )
 from app.agents.triage import triage_ticket
 from app.agents.graph import process_ticket
+from app.request_log import append_request_log
 
 setup_logging(settings.log_level)
 logger = get_logger(__name__)
@@ -166,11 +168,17 @@ async def submit_ticket(request: TicketRequest):
             source=request.source,
         )
 
-        logger.info(
-            "Ticket processed: category=%s confidence=%.2f time_ms=%d",
-            result["category"],
-            result["confidence"],
-            result["processing_time_ms"],
+        append_request_log(
+            {
+                "ticket_id": result["ticket_id"],
+                "correlation_id": correlation_id.get(),
+                "source": request.source,
+                "category": result["category"],
+                "confidence": result["confidence"],
+                "status": result["status"],
+                "processing_time_ms": result["processing_time_ms"],
+                "error": None,
+            }
         )
 
         return ResolutionResponse(
@@ -186,6 +194,14 @@ async def submit_ticket(request: TicketRequest):
 
     except Exception as e:
         logger.error("Failed to process ticket: %s", e, exc_info=True)
+        append_request_log(
+            {
+                "ticket_id": str(uuid.uuid4()),
+                "correlation_id": correlation_id.get(),
+                "source": request.source,
+                "error": str(e),
+            }
+        )
         raise HTTPException(
             status_code=500,
             detail=f"Failed to process ticket: {str(e)}",
@@ -203,9 +219,25 @@ async def triage_only(request: TicketRequest):
     """Classify a ticket without running the full pipeline."""
     logger.info("Triage-only request: %s...", request.ticket_text[:80])
 
+    start_time = time.time()
+
     try:
         result = await triage_ticket(request.ticket_text)
         ticket_id = str(uuid.uuid4())
+        elapsed = round((time.time() - start_time) * 1000, 2)
+
+        append_request_log(
+            {
+                "ticket_id": ticket_id,
+                "correlation_id": correlation_id.get(),
+                "source": request.source,
+                "category": result["category"],
+                "confidence": result["confidence"],
+                "status": "triaged",
+                "processing_time_ms": elapsed,
+                "error": None,
+            }
+        )
 
         return TriageResult(
             ticket_id=ticket_id,
@@ -217,6 +249,14 @@ async def triage_only(request: TicketRequest):
 
     except Exception as e:
         logger.error("Failed to triage ticket: %s", e, exc_info=True)
+        append_request_log(
+            {
+                "ticket_id": str(uuid.uuid4()),
+                "correlation_id": correlation_id.get(),
+                "source": request.source,
+                "error": str(e),
+            }
+        )
         raise HTTPException(
             status_code=500,
             detail=f"Failed to triage ticket: {str(e)}",

@@ -23,6 +23,7 @@
 - Knowledge base docs: `app/data/knowledge_base/*.md`
 - Config: `app/config.py` (reads from `.env`, LLM timeout/retries configurable)
 - Models/schemas: `app/models.py`
+- Request log (JSONL): `app/request_log.py` — appends to `/tmp/helixdesk_requests.jsonl`
 - Tests: `tests/`
 - CI/CD: `.github/workflows/deploy.yml`
 - Render config: `render.yaml`
