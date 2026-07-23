@@ -130,6 +130,7 @@ PINECONE_API_KEY=pcsk_your_key_here
 | `HOST` | No | `0.0.0.0` | Server host |
 | `PORT` | No | `8000` | Server port |
 | `LOG_LEVEL` | No | `INFO` | Logging level |
+| `REQUEST_LOG_PATH` | No | `/tmp/helixdesk_requests.jsonl` | Request log file (JSONL) |
 
 ---
 
@@ -139,6 +140,7 @@ HelixDesk includes production-ready observability features:
 
 - **Structured JSON Logging** — All API requests and agent operations emit structured JSON logs via `app/logging_config.py`, making logs queryable in ELK, Datadog, CloudWatch, etc.
 - **Correlation IDs** — Every request accepts or generates an `X-Correlation-ID` header that propagates through the entire agent pipeline (Triage → Retrieval → Resolution) and appears in all log entries for that request.
+- **Request Log (JSONL)** — Every processed ticket is persisted to `/tmp/helixdesk_requests.jsonl` with ticket_id, correlation_id, category, confidence, processing time, and status — grep-able for post-hoc traceability.
 - **Health Checks** — `/api/v1/health` verifies Groq API key configuration and Pinecone connectivity; `/healthz` provides a lightweight liveness probe.
 - **Configurable Timeouts & Retries** — LLM request timeout and max retries are configurable via `GROQ_REQUEST_TIMEOUT` and `GROQ_MAX_RETRIES`.
 
@@ -275,6 +277,7 @@ None required for CI (tests use mocked LLMs).
 │   ├── config.py            # Centralized settings (pydantic-settings)
 │   ├── models.py            # Request/response Pydantic schemas
 │   ├── logging_config.py    # Structured JSON logging + correlation IDs
+│   ├── request_log.py       # JSONL request persistence (ticket_id + metadata)
 │   ├── agents/
 │   │   ├── triage.py        # Intent classification agent
 │   │   ├── retrieval.py     # RAG document retrieval agent

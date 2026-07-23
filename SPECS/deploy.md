@@ -48,6 +48,7 @@ Additional config via `render.yaml`:
 | `LOG_LEVEL` | `INFO` |
 | `HOST` | `0.0.0.0` |
 | `PORT` | `8000` |
+| `REQUEST_LOG_PATH` | `/tmp/helixdesk_requests.jsonl` |
 
 ## Quality Checklist
 - [ ] Tests pass
@@ -56,6 +57,7 @@ Additional config via `render.yaml`:
 - [ ] Health check returns 200 with `pinecone: "reachable"`
 - [ ] Swagger UI accessible at `/api/v1/docs`
 - [ ] Ticket submission works end-to-end
+- [ ] Request log file exists: `cat /tmp/helixdesk_requests.jsonl` (on Render: Shell → cat)
 
 ## Approval Gates
 None — push to main + Auto-Deploy enabled in Dashboard triggers deploy automatically.
@@ -72,6 +74,7 @@ None — push to main + Auto-Deploy enabled in Dashboard triggers deploy automat
 - Pinecone index dimension mismatch → must be 1024 for `multilingual-e5-large` (index auto-recreated on deploy)
 - Render build timeout → Docker image too large; current image ~468MB is fine
 - Render OOM → free tier has 512MB RAM; should not happen with current app (~50MB runtime)
+- Request log missing → verify `cat /tmp/helixdesk_requests.jsonl` exists; check Render Shell access
 
 ## Local Development
 ```bash
